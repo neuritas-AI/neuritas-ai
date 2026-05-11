@@ -210,3 +210,80 @@ function NewUserDialog({ onCreated }: any) {
     </Dialog>
   );
 }
+
+function PermissionsManager({ members }: { members: any[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [perms, setPerms] = useState<Partial<Permissions>>({});
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function selectUser(id: string) {
+    setSelectedId(id);
+    setLoading(true);
+    const { data } = await supabase.from("user_permissions").select("*").eq("user_id", id).maybeSingle();
+    setPerms(data ?? {});
+    setLoading(false);
+  }
+
+  async function toggle(key: keyof Permissions, value: boolean) {
+    if (!selectedId) return;
+    const next = { ...perms, [key]: value };
+    setPerms(next);
+    setSaving(true);
+    const payload: any = { user_id: selectedId, ...next };
+    const { error } = await supabase.from("user_permissions").upsert(payload, { onConflict: "user_id" });
+    setSaving(false);
+    if (error) toast.error(error.message);
+  }
+
+  if (members.length === 0) {
+    return <p className="text-sm text-muted-foreground">Geen niet-admin gebruikers gevonden. Maak eerst een werknemer aan via het Team-tabblad.</p>;
+  }
+
+  return (
+    <div className="grid md:grid-cols-[220px_1fr] gap-6">
+      <div className="space-y-1">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">Gebruikers</Label>
+        <div className="border rounded-lg divide-y">
+          {members.map(m => (
+            <button
+              key={m.id}
+              onClick={() => selectUser(m.id)}
+              className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition ${selectedId === m.id ? "bg-gradient-brand-soft font-medium" : ""}`}
+            >
+              {m.full_name ?? "—"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        {!selectedId ? (
+          <p className="text-sm text-muted-foreground">Selecteer een gebruiker om rechten aan te passen.</p>
+        ) : loading ? (
+          <p className="text-sm text-muted-foreground">Laden…</p>
+        ) : (
+          <div className="space-y-5">
+            {saving && <p className="text-xs text-muted-foreground">Opslaan…</p>}
+            {PERMISSION_GROUPS.map(group => (
+              <div key={group.label}>
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{group.label}</div>
+                <div className="space-y-2 border rounded-lg p-3">
+                  {group.perms.map(p => (
+                    <div key={p.key} className="flex items-center justify-between">
+                      <Label htmlFor={p.key} className="text-sm font-normal cursor-pointer">{p.label}</Label>
+                      <Switch
+                        id={p.key}
+                        checked={!!perms[p.key]}
+                        onCheckedChange={(v) => toggle(p.key, v)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

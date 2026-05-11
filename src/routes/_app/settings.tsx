@@ -123,7 +123,12 @@ function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                    {m.id !== user?.id && <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />}
+                    {m.id !== user?.id && (
+                      <div className="flex items-center gap-2">
+                        <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />
+                        <DeleteUserButton userId={m.id} name={m.full_name} onDeleted={loadMembers} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -1,0 +1,234 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon } from "lucide-react";
+import { fmtDate, fmtDateTime, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
+import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { ProjectDialog } from "./index";
+import { usePermissions } from "@/lib/permissions";
+import { InvoiceDialog } from "@/components/InvoiceDialog";
+
+export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
+
+function ProjectDetail() {
+  const { id } = Route.useParams();
+  const { user } = useAuth();
+  const { perms } = usePermissions();
+  const [project, setProject] = useState<any | null>(null);
+  const [customer, setCustomer] = useState<any | null>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [appts, setAppts] = useState<any[]>([]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [edit, setEdit] = useState(false);
+  const [invDialog, setInvDialog] = useState<any | false>(false);
+
+  async function load() {
+    const [{ data: p }, { data: t }, { data: a }, { data: f }, { data: pr }, { data: cs }] = await Promise.all([
+      supabase.from("projects").select("*, customers(*)").eq("id", id).maybeSingle(),
+      supabase.from("tasks").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("project_id", id).order("start_at", { ascending: false }),
+      supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
+      supabase.from("profiles").select("id, full_name"),
+      supabase.from("customers").select("id, name"),
+    ]);
+    setProject(p); setCustomer(p?.customers ?? null);
+    setTasks(t ?? []); setAppts(a ?? []); setFiles(f ?? []); setProfiles(pr ?? []); setCustomers(cs ?? []);
+    if (perms.can_view_invoices || perms.can_edit_invoices) {
+      const { data: inv } = await supabase.from("invoices").select("*").eq("project_id", id).order("issue_date", { ascending: false });
+      setInvoices(inv ?? []);
+    }
+  }
+  useEffect(() => {
+    load();
+    const ch = supabase.channel(`proj-${id}`).on("postgres_changes", { event: "*", schema: "public" }, load).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [id, perms.can_view_invoices, perms.can_edit_invoices]);
+
+  if (!project) return <div className="text-muted-foreground">Laden…</div>;
+
+  const assignedNames = (project.assigned_to ?? [])
+    .map((uid: string) => profiles.find(p => p.id === uid)?.full_name ?? "Onbekend")
+    .join(", ");
+
+  return (
+    <div className="space-y-6 max-w-6xl">
+      <Link to="/projects" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Terug naar projecten</Link>
+
+      <Card className="overflow-hidden border-0 shadow-soft">
+        <div className="bg-gradient-brand-soft p-6 md:p-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-3xl font-display font-semibold">{project.name}</h1>
+              {customer && (
+                <Link to="/customers/$id" params={{ id: customer.id }} className="text-sm text-primary hover:underline mt-1 inline-block">
+                  {customer.name}
+                </Link>
+              )}
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <Badge variant="outline" className={projectStatusColor[project.status]}>{projectStatusLabel[project.status]}</Badge>
+                {assignedNames && <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><UsersIcon className="h-3 w-3" /> {assignedNames}</span>}
+              </div>
+              {project.description && <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{project.description}</p>}
+            </div>
+            <Dialog open={edit} onOpenChange={setEdit}>
+              <DialogTrigger asChild><Button variant="outline" size="sm"><Pencil className="h-4 w-4 mr-1" /> Bewerken</Button></DialogTrigger>
+              <ProjectDialog project={project} userId={user?.id ?? null} customers={customers} profiles={profiles} onClose={() => setEdit(false)} />
+            </Dialog>
+          </div>
+        </div>
+      </Card>
+
+      <Tabs defaultValue="overview">
+        <TabsList className="bg-muted/50">
+          <TabsTrigger value="overview">Overzicht</TabsTrigger>
+          <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
+          <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
+          <TabsTrigger value="files">Bestanden ({files.length})</TabsTrigger>
+          {(perms.can_view_invoices || perms.can_edit_invoices) && <TabsTrigger value="invoices">Facturen ({invoices.length})</TabsTrigger>}
+        </TabsList>
+
+        <TabsContent value="overview" className="mt-5 grid sm:grid-cols-3 gap-4">
+          <Card className="p-5"><div className="text-xs text-muted-foreground">Open taken</div><div className="text-2xl font-display font-semibold mt-1">{tasks.filter(t=>t.status!=="done").length}</div></Card>
+          <Card className="p-5"><div className="text-xs text-muted-foreground">Komende afspraken</div><div className="text-2xl font-display font-semibold mt-1">{appts.filter(a=>new Date(a.start_at)>new Date()).length}</div></Card>
+          <Card className="p-5"><div className="text-xs text-muted-foreground">Bestanden</div><div className="text-2xl font-display font-semibold mt-1">{files.length}</div></Card>
+        </TabsContent>
+
+        <TabsContent value="tasks" className="mt-5">
+          <Card className="p-5 space-y-2">
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen taken — voeg ze toe via Taken en koppel aan dit project</p>}
+            {tasks.map(t => (
+              <div key={t.id} className="p-3 rounded-lg border flex items-center justify-between hover:border-primary/40 transition-colors">
+                <div>
+                  <div className="font-medium text-sm">{t.title}</div>
+                  {t.deadline && <div className="text-xs text-muted-foreground">{fmtDate(t.deadline)}</div>}
+                </div>
+                <div className="flex gap-1">
+                  <Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge>
+                  <Badge className={statusColor[t.status]}>{statusLabel[t.status]}</Badge>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="appts" className="mt-5">
+          <Card className="p-5 space-y-2">
+            {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen afspraken</p>}
+            {appts.map(a => (
+              <div key={a.id} className="p-3 rounded-lg border flex items-center gap-3">
+                <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{a.title}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="files" className="mt-5">
+          <ProjectFiles projectId={id} customerId={project.customer_id} files={files} userId={user?.id ?? null} />
+        </TabsContent>
+
+        {(perms.can_view_invoices || perms.can_edit_invoices) && (
+          <TabsContent value="invoices" className="mt-5">
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-display font-semibold">Facturen</h2>
+                {perms.can_edit_invoices && (
+                  <Button size="sm" className="bg-gradient-brand border-0" onClick={()=>setInvDialog({ project_id: id, customer_id: project.customer_id })}>
+                    Nieuwe factuur
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-2">
+                {invoices.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen facturen</p>}
+                {invoices.map(inv => (
+                  <button key={inv.id} onClick={()=>perms.can_edit_invoices && setInvDialog(inv)} className="w-full text-left p-3 rounded-lg border flex items-center justify-between hover:border-primary/40 transition-colors">
+                    <div>
+                      <div className="font-medium text-sm">{inv.number}</div>
+                      <div className="text-xs text-muted-foreground">{fmtDate(inv.issue_date)} · {fmtMoney(inv.amount)}</div>
+                    </div>
+                    <Badge variant="outline" className={invoiceStatusColor[inv.status]}>{invoiceStatusLabel[inv.status]}</Badge>
+                  </button>
+                ))}
+              </div>
+              {invDialog !== false && (
+                <Dialog open={true} onOpenChange={(o)=>!o && setInvDialog(false)}>
+                  <InvoiceDialog invoice={invDialog?.id ? invDialog : null} defaults={invDialog?.id ? null : invDialog} customers={customers} projects={[project]} userId={user?.id ?? null} onClose={()=>setInvDialog(false)} />
+                </Dialog>
+              )}
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
+    </div>
+  );
+}
+
+function ProjectFiles({ projectId, customerId, files, userId }: any) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  async function upload(fl: FileList | null) {
+    if (!fl || !userId) return;
+    for (const file of Array.from(fl)) {
+      const path = `${userId}/${projectId}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("files").upload(path, file);
+      if (upErr) { toast.error(upErr.message); continue; }
+      const { error } = await supabase.from("files").insert({
+        name: file.name, storage_path: path, size: file.size, mime_type: file.type,
+        uploaded_by: userId, project_id: projectId, customer_id: customerId,
+      });
+      if (error) toast.error(error.message);
+    }
+    toast.success("Geüpload");
+    if (inputRef.current) inputRef.current.value = "";
+  }
+  async function download(f: any) {
+    const { data, error } = await supabase.storage.from("files").createSignedUrl(f.storage_path, 60);
+    if (error || !data) return toast.error(error?.message ?? "Fout");
+    window.open(data.signedUrl, "_blank");
+  }
+  async function del(f: any) {
+    if (!confirm("Verwijderen?")) return;
+    await supabase.storage.from("files").remove([f.storage_path]);
+    await supabase.from("files").delete().eq("id", f.id);
+    toast.success("Verwijderd");
+  }
+  return (
+    <Card className="p-5 space-y-4">
+      <div className="flex items-center justify-between pb-3 border-b">
+        <p className="text-sm text-muted-foreground">Bestanden gekoppeld aan dit project</p>
+        <input ref={inputRef} type="file" multiple onChange={e=>upload(e.target.files)} className="hidden" id="pf-up" />
+        <Button asChild className="bg-gradient-brand border-0"><label htmlFor="pf-up" className="cursor-pointer"><Upload className="h-4 w-4 mr-1" /> Upload bestand</label></Button>
+      </div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {files.length === 0 && <div className="col-span-full text-center text-muted-foreground py-8 text-sm">Nog geen bestanden</div>}
+        {files.map((f: any) => (
+          <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-gradient-brand-soft grid place-items-center text-primary"><FileText className="h-5 w-5" /></div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm truncate">{f.name}</div>
+                <div className="text-xs text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
+              </div>
+            </div>
+            <div className="flex gap-1 mt-3 justify-end">
+              <Button size="sm" variant="ghost" onClick={()=>download(f)}><Download className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="ghost" onClick={()=>del(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </Card>
+  );
+}

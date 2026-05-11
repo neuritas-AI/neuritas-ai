@@ -54,6 +54,7 @@ export type Database = {
           end_at: string
           id: string
           participants: string[]
+          project_id: string | null
           start_at: string
           title: string
           updated_at: string
@@ -67,6 +68,7 @@ export type Database = {
           end_at: string
           id?: string
           participants?: string[]
+          project_id?: string | null
           start_at: string
           title: string
           updated_at?: string
@@ -80,6 +82,7 @@ export type Database = {
           end_at?: string
           id?: string
           participants?: string[]
+          project_id?: string | null
           start_at?: string
           title?: string
           updated_at?: string
@@ -90,6 +93,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -176,6 +186,7 @@ export type Database = {
           id: string
           mime_type: string | null
           name: string
+          project_id: string | null
           size: number | null
           storage_path: string
           task_id: string | null
@@ -188,6 +199,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name: string
+          project_id?: string | null
           size?: number | null
           storage_path: string
           task_id?: string | null
@@ -200,6 +212,7 @@ export type Database = {
           id?: string
           mime_type?: string | null
           name?: string
+          project_id?: string | null
           size?: number | null
           storage_path?: string
           task_id?: string | null
@@ -221,10 +234,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "files_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "files_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          due_date: string | null
+          id: string
+          issue_date: string
+          notes: string | null
+          number: string
+          project_id: string
+          status: Database["public"]["Enums"]["invoice_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          number?: string
+          project_id: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          due_date?: string | null
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          number?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -283,6 +363,107 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          assigned_to: string[]
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string | null
+          id: string
+          name: string
+          status: Database["public"]["Enums"]["project_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string[]
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string[]
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: Database["public"]["Enums"]["project_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          issue_date: string
+          notes: string | null
+          number: string
+          project_id: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          number?: string
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          issue_date?: string
+          notes?: string | null
+          number?: string
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -293,6 +474,7 @@ export type Database = {
           description: string | null
           id: string
           priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           tags: string[]
           title: string
@@ -307,6 +489,7 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           title: string
@@ -321,6 +504,7 @@ export type Database = {
           description?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           tags?: string[]
           title?: string
@@ -334,7 +518,50 @@ export type Database = {
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      user_permissions: {
+        Row: {
+          can_edit_invoices: boolean
+          can_edit_quotes: boolean
+          can_manage_customers: boolean
+          can_manage_projects: boolean
+          can_manage_tasks: boolean
+          can_view_invoices: boolean
+          can_view_quotes: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_edit_invoices?: boolean
+          can_edit_quotes?: boolean
+          can_manage_customers?: boolean
+          can_manage_projects?: boolean
+          can_manage_tasks?: boolean
+          can_view_invoices?: boolean
+          can_view_quotes?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_edit_invoices?: boolean
+          can_edit_quotes?: boolean
+          can_manage_customers?: boolean
+          can_manage_projects?: boolean
+          can_manage_tasks?: boolean
+          can_view_invoices?: boolean
+          can_view_quotes?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -359,6 +586,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: {
+        Args: { _perm: string; _uid: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -371,6 +602,9 @@ export type Database = {
     Enums: {
       app_role: "admin" | "employee"
       customer_status: "lead" | "active" | "completed" | "follow_up"
+      invoice_status: "to_send" | "sent" | "paid" | "overdue"
+      project_status: "planned" | "active" | "on_hold" | "completed"
+      quote_status: "draft" | "sent" | "approved" | "rejected"
       task_priority: "low" | "normal" | "high"
       task_status: "todo" | "in_progress" | "done"
     }
@@ -502,6 +736,9 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "employee"],
       customer_status: ["lead", "active", "completed", "follow_up"],
+      invoice_status: ["to_send", "sent", "paid", "overdue"],
+      project_status: ["planned", "active", "on_hold", "completed"],
+      quote_status: ["draft", "sent", "approved", "rejected"],
       task_priority: ["low", "normal", "high"],
       task_status: ["todo", "in_progress", "done"],
     },

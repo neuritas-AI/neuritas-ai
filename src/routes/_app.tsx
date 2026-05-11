@@ -3,7 +3,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt } from "lucide-react";
+import { usePermissions } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,19 +18,26 @@ import { QuickActionsFab } from "@/components/QuickActionsFab";
 
 export const Route = createFileRoute("/_app")({ component: AppLayout });
 
-const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/tasks", label: "Taken", icon: CheckSquare },
-  { to: "/customers", label: "Klanten", icon: Users },
-  { to: "/calendar", label: "Agenda", icon: Calendar },
-  { to: "/settings", label: "Instellingen", icon: Settings },
+const baseNav = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, perm: null },
+  { to: "/tasks", label: "Taken", icon: CheckSquare, perm: null },
+  { to: "/customers", label: "Klanten", icon: Users, perm: null },
+  { to: "/projects", label: "Projecten", icon: FolderKanban, perm: null },
+  { to: "/calendar", label: "Agenda", icon: Calendar, perm: null },
+  { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
+  { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
 ] as const;
 
 function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const { role } = useRole();
+  const { perms } = usePermissions();
   const path = useRouterState({ select: s => s.location.pathname });
+  const nav = baseNav.filter(n => {
+    if (n.perm === "billing") return perms.can_view_quotes || perms.can_edit_quotes || perms.can_view_invoices || perms.can_edit_invoices;
+    return true;
+  });
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Laden…</div>;
   if (!user) return <Navigate to="/login" />;

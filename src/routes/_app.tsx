@@ -164,3 +164,31 @@ function NotificationsBell() {
     </Popover>
   );
 }
+
+function ChatUnreadBadge({ active }: { active: boolean }) {
+  const { user } = useAuth();
+  const [count, setCount] = useState(0);
+  const key = user ? `chat-last-seen:${user.id}` : "";
+
+  useEffect(() => {
+    if (!user) return;
+    if (active) {
+      localStorage.setItem(key, new Date().toISOString());
+      setCount(0);
+      return;
+    }
+    const lastSeen = localStorage.getItem(key) ?? new Date(0).toISOString();
+    supabase.from("chat_messages").select("id", { count: "exact", head: true }).gt("created_at", lastSeen).neq("user_id", user.id).then(({ count }) => {
+      setCount(count ?? 0);
+    });
+    const ch = supabase.channel("chat-badge")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+        if ((payload.new as any).user_id !== user.id) setCount(c => c + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, active, key]);
+
+  if (count === 0) return null;
+  return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-gradient-brand border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
+}

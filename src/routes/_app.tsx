@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle } from "lucide-react";
 import { usePermissions } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const baseNav = [
   { to: "/projects", label: "Projecten", icon: FolderKanban, perm: "projects" as const },
   { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
   { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
+  { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null },
   { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
 ] as const;
 
@@ -63,7 +64,8 @@ function AppLayout() {
                     : "hover:bg-sidebar-accent text-sidebar-foreground/75"
                 }`}>
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.to === "/chat" && <ChatUnreadBadge active={active} />}
               </Link>
             );
           })}
@@ -161,4 +163,32 @@ function NotificationsBell() {
       </PopoverContent>
     </Popover>
   );
+}
+
+function ChatUnreadBadge({ active }: { active: boolean }) {
+  const { user } = useAuth();
+  const [count, setCount] = useState(0);
+  const key = user ? `chat-last-seen:${user.id}` : "";
+
+  useEffect(() => {
+    if (!user) return;
+    if (active) {
+      localStorage.setItem(key, new Date().toISOString());
+      setCount(0);
+      return;
+    }
+    const lastSeen = localStorage.getItem(key) ?? new Date(0).toISOString();
+    supabase.from("chat_messages").select("id", { count: "exact", head: true }).gt("created_at", lastSeen).neq("user_id", user.id).then(({ count }) => {
+      setCount(count ?? 0);
+    });
+    const ch = supabase.channel("chat-badge")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+        if ((payload.new as any).user_id !== user.id) setCount(c => c + 1);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user, active, key]);
+
+  if (count === 0) return null;
+  return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-gradient-brand border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,48 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { INVOICE_STATUSES, invoiceStatusLabel, QUOTE_STATUSES, quoteStatusLabel } from "@/lib/billing-format";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlertTriangle } from "lucide-react";
+
+async function suggestNumber(table: "invoices" | "quotes") {
+  const year = new Date().getFullYear();
+  const { data } = await supabase.from(table).select("number").ilike("number", `%${year}%`).limit(500);
+  const re = new RegExp(`(?:^|[^0-9])${year}[-/_]?(\\d+)`);
+  let max = 0;
+  (data ?? []).forEach((r: any) => {
+    const m = String(r.number ?? "").match(re);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return `${year}-${String(max + 1).padStart(3, "0")}`;
+}
+
+function NumberField({ table, value, onChange, currentId }: { table: "invoices" | "quotes"; value: string; onChange: (v: string) => void; currentId?: string }) {
+  const [duplicate, setDuplicate] = useState(false);
+  useEffect(() => {
+    if (!value.trim()) { setDuplicate(false); return; }
+    const t = setTimeout(async () => {
+      let q = supabase.from(table).select("id").eq("number", value.trim()).limit(1);
+      if (currentId) q = q.neq("id", currentId);
+      const { data } = await q;
+      setDuplicate((data ?? []).length > 0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [value, table, currentId]);
+  return (
+    <div>
+      <Label>Nummer *</Label>
+      <Input value={value} onChange={e => onChange(e.target.value)} placeholder="bv. 2026-001" />
+      {duplicate && (
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" /> Dit nummer bestaat al
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function InvoiceDialog({ invoice, defaults, customers, projects, userId, onClose }: any) {
   const [form, setForm] = useState({
+    number: invoice?.number ?? "",
     customer_id: invoice?.customer_id ?? defaults?.customer_id ?? "",
     project_id: invoice?.project_id ?? defaults?.project_id ?? "",
     status: invoice?.status ?? "to_send",
@@ -20,10 +58,16 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
     due_date: invoice?.due_date ?? "",
     notes: invoice?.notes ?? "",
   });
+  useEffect(() => {
+    if (!invoice && !form.number) suggestNumber("invoices").then(n => setForm(f => ({ ...f, number: n })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   async function save() {
+    if (!form.number.trim()) return toast.error("Factuurnummer verplicht");
     if (!form.customer_id) return toast.error("Klant verplicht");
     if (!form.project_id) return toast.error("Project verplicht");
     const payload: any = {
+      number: form.number.trim(),
       customer_id: form.customer_id, project_id: form.project_id,
       status: form.status, amount: parseFloat(form.amount as any) || 0,
       issue_date: form.issue_date, due_date: form.due_date || null,
@@ -46,6 +90,7 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{invoice ? `Factuur ${invoice.number}` : "Nieuwe factuur"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
+        <NumberField table="invoices" value={form.number} onChange={v => setForm({ ...form, number: v })} currentId={invoice?.id} />
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v,project_id:""})}>
             <SelectTrigger><SelectValue placeholder="Selecteer…" /></SelectTrigger>
@@ -84,6 +129,7 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
 
 export function QuoteDialog({ quote, defaults, customers, projects, userId, onClose }: any) {
   const [form, setForm] = useState({
+    number: quote?.number ?? "",
     customer_id: quote?.customer_id ?? defaults?.customer_id ?? "",
     project_id: quote?.project_id ?? defaults?.project_id ?? "",
     status: quote?.status ?? "draft",
@@ -91,9 +137,15 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
     issue_date: quote?.issue_date ?? new Date().toISOString().slice(0,10),
     notes: quote?.notes ?? "",
   });
+  useEffect(() => {
+    if (!quote && !form.number) suggestNumber("quotes").then(n => setForm(f => ({ ...f, number: n })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   async function save() {
+    if (!form.number.trim()) return toast.error("Offertenummer verplicht");
     if (!form.customer_id) return toast.error("Klant verplicht");
     const payload: any = {
+      number: form.number.trim(),
       customer_id: form.customer_id, project_id: form.project_id || null,
       status: form.status, amount: parseFloat(form.amount as any) || 0,
       issue_date: form.issue_date, notes: form.notes || null,
@@ -115,6 +167,7 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{quote ? `Offerte ${quote.number}` : "Nieuwe offerte"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
+        <NumberField table="quotes" value={form.number} onChange={v => setForm({ ...form, number: v })} currentId={quote?.id} />
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v,project_id:""})}>
             <SelectTrigger><SelectValue placeholder="Selecteer…" /></SelectTrigger>

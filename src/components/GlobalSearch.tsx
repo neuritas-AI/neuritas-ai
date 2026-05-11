@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { Search, Users, CheckSquare, Calendar, FolderKanban } from "lucide-react";
+import { Search, Users, CheckSquare, Calendar, FolderKanban, Receipt, FileText } from "lucide-react";
 
-type Result = { type: "customer"|"task"|"appointment"|"project"; id: string; label: string; sub?: string };
+type Result = { type: "customer"|"task"|"appointment"|"project"|"invoice"|"quote"; id: string; label: string; sub?: string };
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
@@ -30,13 +30,17 @@ export function GlobalSearch() {
       supabase.from("tasks").select("id,title").ilike("title", term).limit(5),
       supabase.from("appointments").select("id,title,start_at").ilike("title", term).limit(5),
       supabase.from("projects").select("id,name,customers(name)").ilike("name", term).limit(5),
-    ]).then(([c, t, a, p]) => {
+      supabase.from("invoices").select("id,number,amount").ilike("number", term).limit(5),
+      supabase.from("quotes").select("id,number,amount").ilike("number", term).limit(5),
+    ]).then(([c, t, a, p, inv, qu]) => {
       if (cancelled) return;
       const r: Result[] = [];
       (c.data ?? []).forEach((x: any) => r.push({ type: "customer", id: x.id, label: x.name, sub: x.company }));
       (p.data ?? []).forEach((x: any) => r.push({ type: "project", id: x.id, label: x.name, sub: x.customers?.name }));
       (t.data ?? []).forEach((x: any) => r.push({ type: "task", id: x.id, label: x.title }));
       (a.data ?? []).forEach((x: any) => r.push({ type: "appointment", id: x.id, label: x.title }));
+      (inv.data ?? []).forEach((x: any) => r.push({ type: "invoice", id: x.id, label: x.number, sub: `€ ${x.amount}` }));
+      (qu.data ?? []).forEach((x: any) => r.push({ type: "quote", id: x.id, label: x.number, sub: `€ ${x.amount}` }));
       setResults(r);
     });
     return () => { cancelled = true; };
@@ -47,6 +51,7 @@ export function GlobalSearch() {
     if (r.type === "customer") nav({ to: "/customers/$id", params: { id: r.id } });
     else if (r.type === "project") nav({ to: "/projects/$id", params: { id: r.id } });
     else if (r.type === "task") nav({ to: "/tasks" });
+    else if (r.type === "invoice" || r.type === "quote") nav({ to: "/billing" });
     else nav({ to: "/calendar" });
   }
 
@@ -57,7 +62,7 @@ export function GlobalSearch() {
         <kbd className="hidden md:inline ml-2 text-[10px] bg-muted rounded px-1.5 py-0.5">⌘K</kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Zoek klanten, taken, afspraken…" value={q} onValueChange={setQ} />
+        <CommandInput placeholder="Zoek klanten, taken, projecten, facturen…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>Geen resultaten</CommandEmpty>
           {results.filter(r => r.type === "customer").length > 0 && (
@@ -85,6 +90,20 @@ export function GlobalSearch() {
             <CommandGroup heading="Afspraken">
               {results.filter(r => r.type === "appointment").map(r => (
                 <CommandItem key={r.id} onSelect={() => go(r)}><Calendar className="h-4 w-4 mr-2" />{r.label}</CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {results.filter(r => r.type === "quote").length > 0 && (
+            <CommandGroup heading="Offertes">
+              {results.filter(r => r.type === "quote").map(r => (
+                <CommandItem key={r.id} onSelect={() => go(r)}><FileText className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {results.filter(r => r.type === "invoice").length > 0 && (
+            <CommandGroup heading="Facturen">
+              {results.filter(r => r.type === "invoice").map(r => (
+                <CommandItem key={r.id} onSelect={() => go(r)}><Receipt className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
               ))}
             </CommandGroup>
           )}

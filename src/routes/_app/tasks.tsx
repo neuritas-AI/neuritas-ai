@@ -54,7 +54,7 @@ function TasksPage() {
     if (error) return toast.error(error.message);
     toast.success("Taak verwijderd");
   }
-  async function updateStatus(id: string, status: string) {
+  async function updateStatus(id: string, status: "todo"|"in_progress"|"done") {
     const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
   }
@@ -192,7 +192,7 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
           <div><Label>Status</Label>
             <Select value={form.status} onValueChange={v=>setForm({...form,status:v})}>
               <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{STATUSES.map(s=> <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>)}</SelectContent>
+              <SelectContent>{STATUSES.map((s: string)=> <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>Prioriteit</Label>

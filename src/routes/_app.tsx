@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle } from "lucide-react";
 import { usePermissions } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";

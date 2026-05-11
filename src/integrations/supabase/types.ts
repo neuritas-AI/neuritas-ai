@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           color: string
@@ -98,6 +128,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          assigned_to: string[]
           company: string | null
           created_at: string
           created_by: string | null
@@ -110,6 +141,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string[]
           company?: string | null
           created_at?: string
           created_by?: string | null
@@ -122,6 +154,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string[]
           company?: string | null
           created_at?: string
           created_by?: string | null
@@ -333,9 +366,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "employee"
       customer_status: "lead" | "active" | "completed" | "follow_up"
       task_priority: "low" | "normal" | "high"
       task_status: "todo" | "in_progress" | "done"
@@ -466,7 +500,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "employee"],
       customer_status: ["lead", "active", "completed", "follow_up"],
       task_priority: ["low", "normal", "high"],
       task_status: ["todo", "in_progress", "done"],

@@ -10,22 +10,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil } from "lucide-react";
-import { fmtDate, isOverdue, priorityColor, priorityLabel, statusColor, statusLabel } from "@/lib/format";
+import { Plus, Trash2, Pencil, Calendar as CalIcon } from "lucide-react";
+import { fmtDate, isOverdue, isUrgent, priorityColor, priorityLabel, statusColor, statusLabel, statusKanbanAccent } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/role";
+import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
 
 const STATUSES = ["todo","in_progress","done"] as const;
+type ViewKey = "mine" | "today" | "week" | "all";
 
 function TasksPage() {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const [tasks, setTasks] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [view, setView] = useState<ViewKey>("mine");
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -43,10 +49,21 @@ function TasksPage() {
     return () => { supabase.removeChannel(ch); };
   }, []);
 
-  const filtered = useMemo(() => tasks.filter(t =>
+  const viewFiltered = useMemo(() => {
+    const today = new Date();
+    return tasks.filter(t => {
+      if (view === "mine") return t.assignee_id === user?.id;
+      if (view === "today") return t.deadline && isSameDay(new Date(t.deadline), today);
+      if (view === "week") return t.deadline && isWithinInterval(new Date(t.deadline), { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) });
+      return true;
+    });
+  }, [tasks, view, user]);
+
+  const filtered = useMemo(() => viewFiltered.filter(t =>
     (filterStatus === "all" || t.status === filterStatus) &&
+    (filterPriority === "all" || t.priority === filterPriority) &&
     (!search || t.title.toLowerCase().includes(search.toLowerCase()) || (t.tags ?? []).some((x: string) => x.toLowerCase().includes(search.toLowerCase())))
-  ), [tasks, search, filterStatus]);
+  ), [viewFiltered, search, filterStatus, filterPriority]);
 
   async function deleteTask(id: string) {
     if (!confirm("Verwijder deze taak?")) return;
@@ -60,31 +77,90 @@ function TasksPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-display font-semibold">Taken</h1>
-          <p className="text-muted-foreground text-sm">Beheer to-do's, prioriteiten en deadlines</p>
+          <p className="text-muted-foreground text-sm mt-1">Beheer to-do's, prioriteiten en deadlines</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
+          <DialogTrigger asChild><Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
           <TaskDialog task={editing} customers={customers} profiles={profiles} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
         </Dialog>
       </div>
 
-      <Card className="p-4 flex gap-3 flex-wrap items-center">
+      <div className="flex flex-wrap gap-2">
+        {([
+          { k: "mine", l: "Mijn taken" },
+          { k: "today", l: "Vandaag" },
+          { k: "week", l: "Deze week" },
+          ...(isAdmin ? [{ k: "all" as const, l: "Alle taken" }] : []),
+        ] as const).map(v => (
+          <button key={v.k} onClick={()=>setView(v.k as ViewKey)}
+            className={`px-3 py-1.5 rounded-full text-sm transition-all ${view === v.k ? "bg-gradient-brand text-white shadow-brand" : "bg-muted hover:bg-accent"}`}>
+            {v.l}
+          </button>
+        ))}
+      </div>
+
+      <Card className="p-4 flex gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft">
         <Input placeholder="Zoek op titel of tag…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle statussen</SelectItem>
             {STATUSES.map(s => <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle prioriteiten</SelectItem>
+            <SelectItem value="low">Laag</SelectItem><SelectItem value="normal">Normaal</SelectItem><SelectItem value="high">Hoog</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} taak{filtered.length===1?"":"en"}</span>
       </Card>
 
-      <Tabs defaultValue="list">
-        <TabsList><TabsTrigger value="list">Lijst</TabsTrigger><TabsTrigger value="kanban">Kanban</TabsTrigger></TabsList>
+      <Tabs defaultValue="kanban">
+        <TabsList><TabsTrigger value="kanban">Kanban</TabsTrigger><TabsTrigger value="list">Lijst</TabsTrigger></TabsList>
+
+        <TabsContent value="kanban">
+          <div className="grid md:grid-cols-3 gap-4">
+            {STATUSES.map(s => (
+              <Card key={s} className={`p-4 ${statusKanbanAccent[s]}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-display font-semibold">{statusLabel[s]}</h3>
+                  <Badge variant="outline">{filtered.filter(t => t.status === s).length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {filtered.filter(t => t.status === s).map(t => (
+                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                      onClick={()=>{ setEditing(t); setOpen(true); }}>
+                      <div className="font-medium text-sm">{t.title}</div>
+                      {t.customers?.name && <div className="text-xs text-muted-foreground mt-0.5">{t.customers.name}</div>}
+                      <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
+                        <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
+                        {t.deadline && (
+                          <span className={`text-[10px] inline-flex items-center gap-0.5 ${isOverdue(t.deadline,t.status)?"text-destructive font-medium":"text-muted-foreground"}`}>
+                            <CalIcon className="h-2.5 w-2.5" /> {fmtDate(t.deadline)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
+                        {STATUSES.filter(x => x !== s).map(x => (
+                          <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {filtered.filter(t => t.status === s).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Geen taken</p>}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
         <TabsContent value="list">
           <Card className="overflow-hidden">
             <table className="w-full text-sm">
@@ -92,11 +168,11 @@ function TasksPage() {
                 <tr>
                   <th className="text-left p-3">Titel</th><th className="text-left p-3">Status</th>
                   <th className="text-left p-3">Prioriteit</th><th className="text-left p-3">Deadline</th>
-                  <th className="text-left p-3">Klant</th><th className="text-left p-3">Tags</th><th></th>
+                  <th className="text-left p-3">Klant</th><th></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Geen taken</td></tr>}
+                {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Geen taken</td></tr>}
                 {filtered.map(t => (
                   <tr key={t.id} className="border-t hover:bg-accent/30">
                     <td className="p-3 font-medium">{t.title}</td>
@@ -104,7 +180,6 @@ function TasksPage() {
                     <td className="p-3"><Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge></td>
                     <td className="p-3">{t.deadline ? <span className={isOverdue(t.deadline,t.status)?"text-destructive":""}>{fmtDate(t.deadline)}</span> : "—"}</td>
                     <td className="p-3 text-muted-foreground">{t.customers?.name ?? "—"}</td>
-                    <td className="p-3"><div className="flex gap-1 flex-wrap">{(t.tags ?? []).map((x: string) => <Badge key={x} variant="outline" className="text-[10px]">{x}</Badge>)}</div></td>
                     <td className="p-3 text-right">
                       <Button size="icon" variant="ghost" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => deleteTask(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -114,34 +189,6 @@ function TasksPage() {
               </tbody>
             </table>
           </Card>
-        </TabsContent>
-        <TabsContent value="kanban">
-          <div className="grid md:grid-cols-3 gap-4">
-            {STATUSES.map(s => (
-              <Card key={s} className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-medium">{statusLabel[s]}</h3>
-                  <Badge variant="outline">{filtered.filter(t => t.status === s).length}</Badge>
-                </div>
-                <div className="space-y-2">
-                  {filtered.filter(t => t.status === s).map(t => (
-                    <div key={t.id} className="p-3 rounded-md border bg-card">
-                      <div className="font-medium text-sm">{t.title}</div>
-                      <div className="flex items-center justify-between mt-2">
-                        <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
-                        {t.deadline && <span className={`text-[10px] ${isOverdue(t.deadline,t.status)?"text-destructive":"text-muted-foreground"}`}>{fmtDate(t.deadline)}</span>}
-                      </div>
-                      <div className="flex gap-1 mt-2">
-                        {STATUSES.filter(x => x !== s).map(x => (
-                          <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            ))}
-          </div>
         </TabsContent>
       </Tabs>
     </div>
@@ -171,23 +218,22 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
       ? await supabase.from("tasks").update(payload).eq("id", task.id)
       : await supabase.from("tasks").insert(payload as any);
     if (error) return toast.error(error.message);
-
-    if (!task && form.assignee_id && form.assignee_id !== userId) {
-      await supabase.from("notifications").insert({
-        user_id: form.assignee_id, type: "task_assigned",
-        title: "Nieuwe taak toegewezen", body: form.title,
-      });
-    }
     toast.success(task ? "Taak bijgewerkt" : "Taak aangemaakt");
     onClose();
+  }
+
+  async function del() {
+    if (!task || !confirm("Verwijderen?")) return;
+    await supabase.from("tasks").delete().eq("id", task.id);
+    toast.success("Verwijderd"); onClose();
   }
 
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{task ? "Taak bewerken" : "Nieuwe taak"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>Titel</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
-        <div><Label>Beschrijving</Label><Textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
+        <div><Label>Titel *</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
+        <div><Label>Beschrijving / Notities</Label><Textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Status</Label>
             <Select value={form.status} onValueChange={v=>setForm({...form,status:v})}>
@@ -219,7 +265,11 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
       </div>
-      <DialogFooter><Button variant="ghost" onClick={onClose}>Annuleren</Button><Button onClick={save}>Opslaan</Button></DialogFooter>
+      <DialogFooter className="gap-2">
+        {task && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}
+        <Button variant="ghost" onClick={onClose}>Annuleren</Button>
+        <Button onClick={save} className="bg-gradient-brand border-0">Opslaan</Button>
+      </DialogFooter>
     </DialogContent>
   );
 }

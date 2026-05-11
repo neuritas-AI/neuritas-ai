@@ -69,6 +69,7 @@ function SettingsPage() {
           <TabsTrigger value="profile">Profiel</TabsTrigger>
           <TabsTrigger value="display">Weergave</TabsTrigger>
           {isAdmin && <TabsTrigger value="team">Team</TabsTrigger>}
+          {isAdmin && <TabsTrigger value="permissions">Gebruikersbeheer</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-5 mt-5">

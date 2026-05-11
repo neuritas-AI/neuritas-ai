@@ -529,35 +529,59 @@ export type Database = {
       }
       user_permissions: {
         Row: {
+          can_edit_customers: boolean
           can_edit_invoices: boolean
+          can_edit_projects: boolean
           can_edit_quotes: boolean
+          can_edit_tasks: boolean
+          can_manage_appointments: boolean
           can_manage_customers: boolean
           can_manage_projects: boolean
           can_manage_tasks: boolean
+          can_view_calendar: boolean
+          can_view_customers: boolean
           can_view_invoices: boolean
+          can_view_projects: boolean
           can_view_quotes: boolean
+          can_view_tasks: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
+          can_edit_customers?: boolean
           can_edit_invoices?: boolean
+          can_edit_projects?: boolean
           can_edit_quotes?: boolean
+          can_edit_tasks?: boolean
+          can_manage_appointments?: boolean
           can_manage_customers?: boolean
           can_manage_projects?: boolean
           can_manage_tasks?: boolean
+          can_view_calendar?: boolean
+          can_view_customers?: boolean
           can_view_invoices?: boolean
+          can_view_projects?: boolean
           can_view_quotes?: boolean
+          can_view_tasks?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
+          can_edit_customers?: boolean
           can_edit_invoices?: boolean
+          can_edit_projects?: boolean
           can_edit_quotes?: boolean
+          can_edit_tasks?: boolean
+          can_manage_appointments?: boolean
           can_manage_customers?: boolean
           can_manage_projects?: boolean
           can_manage_tasks?: boolean
+          can_view_calendar?: boolean
+          can_view_customers?: boolean
           can_view_invoices?: boolean
+          can_view_projects?: boolean
           can_view_quotes?: boolean
+          can_view_tasks?: boolean
           updated_at?: string
           user_id?: string
         }

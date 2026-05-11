@@ -64,7 +64,8 @@ function AppLayout() {
                     : "hover:bg-sidebar-accent text-sidebar-foreground/75"
                 }`}>
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.to === "/chat" && <ChatUnreadBadge active={active} />}
               </Link>
             );
           })}

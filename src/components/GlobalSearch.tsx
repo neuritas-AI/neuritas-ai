@@ -62,7 +62,7 @@ export function GlobalSearch() {
         <kbd className="hidden md:inline ml-2 text-[10px] bg-muted rounded px-1.5 py-0.5">⌘K</kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Zoek klanten, taken, afspraken…" value={q} onValueChange={setQ} />
+        <CommandInput placeholder="Zoek klanten, taken, projecten, facturen…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>Geen resultaten</CommandEmpty>
           {results.filter(r => r.type === "customer").length > 0 && (

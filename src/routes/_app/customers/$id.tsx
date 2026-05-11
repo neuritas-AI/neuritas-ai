@@ -126,7 +126,7 @@ function CustomerDetail() {
           <div className="grid sm:grid-cols-3 gap-4">
             <Card className="p-5"><div className="text-xs text-muted-foreground">Open taken</div><div className="text-2xl font-display font-semibold mt-1">{tasks.filter(t=>t.status!=="done").length}</div></Card>
             <Card className="p-5"><div className="text-xs text-muted-foreground">Komende afspraken</div><div className="text-2xl font-display font-semibold mt-1">{appts.filter(a=>new Date(a.start_at)>new Date()).length}</div></Card>
-            <Card className="p-5"><div className="text-xs text-muted-foreground">Bestanden</div><div className="text-2xl font-display font-semibold mt-1">{files.length}</div></Card>
+            <Card className="p-5"><div className="text-xs text-muted-foreground">Projecten</div><div className="text-2xl font-display font-semibold mt-1">{projects.length}</div></Card>
           </div>
         </TabsContent>
 

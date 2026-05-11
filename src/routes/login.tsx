@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Briefcase } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -17,7 +16,6 @@ function LoginPage() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (loading) return null;
@@ -32,58 +30,32 @@ function LoginPage() {
     nav({ to: "/dashboard" });
   }
 
-  async function handleSignup(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { emailRedirectTo: window.location.origin, data: { full_name: name } },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Account aangemaakt — je bent ingelogd");
-    nav({ to: "/dashboard" });
-  }
-
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between bg-gradient-to-br from-primary to-primary/60 text-primary-foreground p-12">
-        <div className="flex items-center gap-2 font-display text-xl font-semibold">
-          <Briefcase className="h-6 w-6" /> Werkplek
+      <div className="hidden lg:flex flex-col justify-between bg-gradient-brand text-white p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at 30% 20%, white 0%, transparent 50%)" }} />
+        <div className="relative z-10">
+          <Logo className="h-10 w-auto brightness-0 invert" />
         </div>
-        <div>
-          <h1 className="font-display text-5xl font-semibold leading-tight">Alles op één plek.</h1>
-          <p className="mt-4 text-lg text-primary-foreground/80 max-w-md">
-            Taken, klanten, agenda en bestanden — gekoppeld en realtime gesynchroniseerd voor jullie team.
+        <div className="relative z-10">
+          <h1 className="font-display text-5xl font-semibold leading-tight">Slimmer samenwerken.</h1>
+          <p className="mt-4 text-lg text-white/85 max-w-md">
+            Taken, klanten en agenda — gekoppeld, realtime en intuïtief voor jullie team.
           </p>
         </div>
-        <div className="text-sm text-primary-foreground/70">© Werkplek</div>
+        <div className="relative z-10 text-sm text-white/70">© Neuritas-AI</div>
       </div>
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md p-8">
+      <div className="flex items-center justify-center p-6 bg-background">
+        <Card className="w-full max-w-md p-8 shadow-soft border-0">
+          <div className="lg:hidden mb-6"><Logo className="h-8 w-auto" /></div>
           <h2 className="font-display text-2xl font-semibold">Welkom terug</h2>
           <p className="text-sm text-muted-foreground mb-6">Log in om verder te gaan</p>
-          <Tabs defaultValue="login">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="login">Inloggen</TabsTrigger>
-              <TabsTrigger value="signup">Account aanmaken</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4 mt-4">
-                <div><Label>E-mail</Label><Input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
-                <div><Label>Wachtwoord</Label><Input type="password" required value={password} onChange={e => setPassword(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={busy}>{busy ? "Bezig…" : "Inloggen"}</Button>
-              </form>
-            </TabsContent>
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4 mt-4">
-                <div><Label>Volledige naam</Label><Input required value={name} onChange={e => setName(e.target.value)} /></div>
-                <div><Label>E-mail</Label><Input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
-                <div><Label>Wachtwoord</Label><Input type="password" required minLength={6} value={password} onChange={e => setPassword(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={busy}>{busy ? "Bezig…" : "Aanmaken"}</Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div><Label>E-mail</Label><Input type="email" required value={email} onChange={e => setEmail(e.target.value)} /></div>
+            <div><Label>Wachtwoord</Label><Input type="password" required value={password} onChange={e => setPassword(e.target.value)} /></div>
+            <Button type="submit" className="w-full bg-gradient-brand border-0 hover:opacity-90" disabled={busy}>{busy ? "Bezig…" : "Inloggen"}</Button>
+          </form>
+          <p className="text-xs text-muted-foreground mt-6 text-center">Nieuwe accounts worden door een admin aangemaakt.</p>
         </Card>
       </div>
     </div>

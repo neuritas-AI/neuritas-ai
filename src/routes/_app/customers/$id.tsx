@@ -185,87 +185,59 @@ function CustomerDetail() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="files" className="mt-5">
-          <CustomerFiles customerId={id} files={files} userId={user?.id ?? null} tasks={tasks} appts={appts} />
+        <TabsContent value="projects" className="mt-5">
+          <Card className="p-5">
+            <div className="space-y-2">
+              {projects.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nog geen projecten</p>}
+              {projects.map(pr => (
+                <Link key={pr.id} to="/projects/$id" params={{ id: pr.id }} className="block p-3 rounded-lg border hover:border-primary/40 transition-colors">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FolderKanban className="h-4 w-4 text-primary shrink-0" />
+                      <span className="font-medium text-sm truncate">{pr.name}</span>
+                    </div>
+                    <Badge className={projectStatusColor[pr.status]}>{projectStatusLabel[pr.status]}</Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Card>
         </TabsContent>
+
+        {(perms.can_view_quotes || perms.can_view_invoices) && (
+          <TabsContent value="billing" className="mt-5 space-y-4">
+            {perms.can_view_quotes && (
+              <Card className="p-5">
+                <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Receipt className="h-4 w-4" /> Offertes</h3>
+                <div className="space-y-2">
+                  {quotes.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Geen offertes</p>}
+                  {quotes.map((q: any) => (
+                    <div key={q.id} className="p-3 rounded-lg border flex items-center justify-between">
+                      <div className="text-sm"><span className="font-medium">{q.number}</span> — {q.title}</div>
+                      <div className="flex items-center gap-2"><span className="text-sm">{fmtMoney(q.total)}</span><Badge className={quoteStatusColor[q.status]}>{quoteStatusLabel[q.status]}</Badge></div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+            {perms.can_view_invoices && (
+              <Card className="p-5">
+                <h3 className="font-display font-semibold mb-3 flex items-center gap-2"><Receipt className="h-4 w-4" /> Facturen</h3>
+                <div className="space-y-2">
+                  {invoices.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Geen facturen</p>}
+                  {invoices.map((inv: any) => (
+                    <div key={inv.id} className="p-3 rounded-lg border flex items-center justify-between">
+                      <div className="text-sm"><span className="font-medium">{inv.number}</span> — {inv.title}</div>
+                      <div className="flex items-center gap-2"><span className="text-sm">{fmtMoney(inv.total)}</span><Badge className={invoiceStatusColor[inv.status]}>{invoiceStatusLabel[inv.status]}</Badge></div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
 }
 
-function CustomerFiles({ customerId, files, userId, tasks, appts }: any) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [linkType, setLinkType] = useState<"none"|"task"|"appointment">("none");
-  const [linkId, setLinkId] = useState<string>("");
-
-  async function upload(fl: FileList | null) {
-    if (!fl || !userId) return;
-    for (const file of Array.from(fl)) {
-      const path = `${userId}/${customerId}/${Date.now()}-${file.name}`;
-      const { error: upErr } = await supabase.storage.from("files").upload(path, file);
-      if (upErr) { toast.error(upErr.message); continue; }
-      const link: any = {
-        name: file.name, storage_path: path, size: file.size, mime_type: file.type,
-        uploaded_by: userId, customer_id: customerId,
-      };
-      if (linkType === "task" && linkId) link.task_id = linkId;
-      if (linkType === "appointment" && linkId) link.appointment_id = linkId;
-      const { error } = await supabase.from("files").insert(link);
-      if (error) toast.error(error.message);
-    }
-    toast.success("Geüpload");
-    if (inputRef.current) inputRef.current.value = "";
-  }
-
-  async function download(f: any) {
-    const { data, error } = await supabase.storage.from("files").createSignedUrl(f.storage_path, 60);
-    if (error || !data) return toast.error(error?.message ?? "Fout");
-    window.open(data.signedUrl, "_blank");
-  }
-  async function del(f: any) {
-    if (!confirm("Verwijder dit bestand?")) return;
-    await supabase.storage.from("files").remove([f.storage_path]);
-    await supabase.from("files").delete().eq("id", f.id);
-    toast.success("Verwijderd");
-  }
-
-  return (
-    <Card className="p-5 space-y-4">
-      <div className="flex flex-wrap gap-2 items-center pb-3 border-b">
-        <select value={linkType} onChange={e=>{ setLinkType(e.target.value as any); setLinkId(""); }} className="text-sm border rounded-md px-2 py-1.5 bg-background">
-          <option value="none">Geen extra koppeling</option>
-          <option value="task">Koppel aan taak</option>
-          <option value="appointment">Koppel aan afspraak</option>
-        </select>
-        {linkType !== "none" && (
-          <select value={linkId} onChange={e=>setLinkId(e.target.value)} className="text-sm border rounded-md px-2 py-1.5 bg-background">
-            <option value="">Selecteer…</option>
-            {(linkType === "task" ? tasks : appts).map((x: any) => (
-              <option key={x.id} value={x.id}>{x.title}</option>
-            ))}
-          </select>
-        )}
-        <input ref={inputRef} type="file" multiple onChange={e=>upload(e.target.files)} className="hidden" id="cf-up" />
-        <Button asChild className="bg-gradient-brand border-0 ml-auto"><label htmlFor="cf-up" className="cursor-pointer"><Upload className="h-4 w-4 mr-1" /> Upload</label></Button>
-      </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {files.length === 0 && <div className="col-span-full text-center text-muted-foreground py-8 text-sm">Nog geen bestanden</div>}
-        {files.map((f: any) => (
-          <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-brand-soft grid place-items-center text-primary"><FileText className="h-5 w-5" /></div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{f.name}</div>
-                <div className="text-xs text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
-              </div>
-            </div>
-            <div className="flex gap-1 mt-3 justify-end">
-              <Button size="sm" variant="ghost" onClick={()=>download(f)}><Download className="h-3.5 w-3.5" /></Button>
-              <Button size="sm" variant="ghost" onClick={()=>del(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </Card>
-  );
-}

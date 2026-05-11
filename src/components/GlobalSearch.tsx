@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { Search, Users, CheckSquare, Calendar, FolderKanban } from "lucide-react";
+import { Search, Users, CheckSquare, Calendar, FolderKanban, Receipt, FileText } from "lucide-react";
 
-type Result = { type: "customer"|"task"|"appointment"|"project"; id: string; label: string; sub?: string };
+type Result = { type: "customer"|"task"|"appointment"|"project"|"invoice"|"quote"; id: string; label: string; sub?: string };
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);

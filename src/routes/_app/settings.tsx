@@ -129,6 +129,18 @@ function SettingsPage() {
             </Card>
           </TabsContent>
         )}
+
+        {isAdmin && (
+          <TabsContent value="permissions" className="mt-5">
+            <Card className="p-6 space-y-4">
+              <div>
+                <h2 className="font-display font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Gebruikersbeheer</h2>
+                <p className="text-xs text-muted-foreground mt-1">Bepaal per gebruiker welke onderdelen ze kunnen zien en bewerken. Admins hebben altijd volledige toegang.</p>
+              </div>
+              <PermissionsManager members={members.filter(m => !m.roles.includes("admin"))} />
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

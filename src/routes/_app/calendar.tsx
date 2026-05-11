@@ -23,17 +23,19 @@ function CalendarPage() {
   const { user } = useAuth();
   const [appts, setAppts] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
-  const [view, setView] = useState<"month"|"week"|"day">("month");
+  const [projects, setProjects] = useState<any[]>([]);
+  const [view, setView] = useState<"month"|"week"|"day">("week");
   const [cursor, setCursor] = useState(new Date());
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
 
   async function load() {
-    const [{ data: a }, { data: c }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: pr }] = await Promise.all([
       supabase.from("appointments").select("*, customers(name)").order("start_at"),
       supabase.from("customers").select("id,name").order("name"),
+      supabase.from("projects").select("id,name,customer_id").order("name"),
     ]);
-    setAppts(a ?? []); setCustomers(c ?? []);
+    setAppts(a ?? []); setCustomers(c ?? []); setProjects(pr ?? []);
   }
   useEffect(() => {
     load();
@@ -68,7 +70,7 @@ function CalendarPage() {
         </div>
         <Dialog open={open} onOpenChange={(o)=>{setOpen(o); if(!o)setEditing(null);}}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button></DialogTrigger>
-          <ApptDialog appt={editing} customers={customers} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
+          <ApptDialog appt={editing} customers={customers} projects={projects} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
         </Dialog>
       </div>
 
@@ -140,17 +142,17 @@ function CalendarPage() {
   );
 }
 
-function ApptDialog({ appt, customers, userId, defaultDate, onClose }: any) {
+function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }: any) {
   const init = appt ? {
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
-    color: appt.color, customer_id: appt.customer_id ?? "",
+    color: appt.color, customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
   } : {
     title: "", description: "",
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
-    color: COLORS[0], customer_id: "",
+    color: COLORS[0], customer_id: "", project_id: "",
   };
   const [form, setForm] = useState(init);
 
@@ -161,6 +163,7 @@ function ApptDialog({ appt, customers, userId, defaultDate, onClose }: any) {
       start_at: new Date(form.start_at).toISOString(),
       end_at: new Date(form.end_at).toISOString(),
       color: form.color, customer_id: form.customer_id || null,
+      project_id: form.project_id || null,
       ...(appt ? {} : { created_by: userId, participants: userId ? [userId] : [] }),
     };
     const { error } = appt
@@ -185,11 +188,25 @@ function ApptDialog({ appt, customers, userId, defaultDate, onClose }: any) {
           <div><Label>Start</Label><Input type="datetime-local" value={form.start_at} onChange={e=>setForm({...form,start_at:e.target.value})} /></div>
           <div><Label>Einde</Label><Input type="datetime-local" value={form.end_at} onChange={e=>setForm({...form,end_at:e.target.value})} /></div>
         </div>
-        <div><Label>Klant</Label>
-          <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
-            <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-            <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Klant</Label>
+            <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
+              <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div><Label>Project</Label>
+            <Select value={form.project_id || "none"} onValueChange={v=>{
+              const p = projects.find((x:any)=>x.id===v);
+              setForm({...form, project_id: v==="none"?"":v, ...(p ? { customer_id: p.customer_id } : {})});
+            }}>
+              <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Geen</SelectItem>
+                {projects.filter((p:any)=>!form.customer_id || p.customer_id===form.customer_id).map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div><Label>Kleur</Label>
           <div className="flex gap-2 mt-1">

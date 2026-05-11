@@ -17,10 +17,10 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
-import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
-import { Route as AppCustomersIdRouteImport } from './routes/_app/customers/$id'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
 import { Route as AppProjectsIdRouteImport } from './routes/_app/projects/$id'
+import { Route as AppCustomersIdRouteImport } from './routes/_app/customers/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -61,24 +61,24 @@ const AppBillingRoute = AppBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
-  id: '/customers/',
-  path: '/customers/',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
-  id: '/customers/$id',
-  path: '/customers/$id',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomersIdRoute = AppCustomersIdRouteImport.update({
+  id: '/customers/$id',
+  path: '/customers/$id',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -91,8 +91,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
   '/customers/$id': typeof AppCustomersIdRoute
-  '/customers/': typeof AppCustomersIndexRoute
   '/projects/$id': typeof AppProjectsIdRoute
+  '/customers/': typeof AppCustomersIndexRoute
   '/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -104,8 +104,8 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
   '/customers/$id': typeof AppCustomersIdRoute
-  '/customers': typeof AppCustomersIndexRoute
   '/projects/$id': typeof AppProjectsIdRoute
+  '/customers': typeof AppCustomersIndexRoute
   '/projects': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesById {
@@ -119,8 +119,8 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tasks': typeof AppTasksRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
-  '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
+  '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRouteTypes {
@@ -134,8 +134,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/customers/$id'
-    | '/customers/'
     | '/projects/$id'
+    | '/customers/'
     | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -147,8 +147,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/tasks'
     | '/customers/$id'
-    | '/customers'
     | '/projects/$id'
+    | '/customers'
     | '/projects'
   id:
     | '__root__'
@@ -161,8 +161,8 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/tasks'
     | '/_app/customers/$id'
-    | '/_app/customers/'
     | '/_app/projects/$id'
+    | '/_app/customers/'
     | '/_app/projects/'
   fileRoutesById: FileRoutesById
 }
@@ -230,20 +230,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/customers/': {
-      id: '/_app/customers/'
-      path: '/customers'
-      fullPath: '/customers/'
-      preLoaderRoute: typeof AppCustomersIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/customers/$id': {
-      id: '/_app/customers/$id'
-      path: '/customers/$id'
-      fullPath: '/customers/$id'
-      preLoaderRoute: typeof AppCustomersIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/projects/': {
       id: '/_app/projects/'
       path: '/projects'
@@ -251,11 +237,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProjectsIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/customers'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/projects/$id': {
       id: '/_app/projects/$id'
       path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AppProjectsIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/customers/$id': {
+      id: '/_app/customers/$id'
+      path: '/customers/$id'
+      fullPath: '/customers/$id'
+      preLoaderRoute: typeof AppCustomersIdRouteImport
       parentRoute: typeof AppRoute
     }
   }
@@ -268,8 +268,8 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppCustomersIdRoute: typeof AppCustomersIdRoute
-  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppProjectsIdRoute: typeof AppProjectsIdRoute
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
   AppProjectsIndexRoute: typeof AppProjectsIndexRoute
 }
 
@@ -280,8 +280,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
   AppCustomersIdRoute: AppCustomersIdRoute,
-  AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppProjectsIdRoute: AppProjectsIdRoute,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
   AppProjectsIndexRoute: AppProjectsIndexRoute,
 }
 

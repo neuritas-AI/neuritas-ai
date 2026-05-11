@@ -35,13 +35,15 @@ function TasksPage() {
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
 
+  const [projects, setProjects] = useState<any[]>([]);
   async function load() {
-    const [{ data: t }, { data: c }, { data: p }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name)").order("created_at", { ascending: false }),
+    const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
+      supabase.from("tasks").select("*, customers(name), projects(name)").order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name").order("name"),
       supabase.from("profiles").select("id, full_name"),
+      supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);
-    setTasks(t ?? []); setCustomers(c ?? []); setProfiles(p ?? []);
+    setTasks(t ?? []); setCustomers(c ?? []); setProfiles(p ?? []); setProjects(pr ?? []);
   }
   useEffect(() => {
     load();
@@ -85,7 +87,7 @@ function TasksPage() {
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
-          <TaskDialog task={editing} customers={customers} profiles={profiles} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
+          <TaskDialog task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
         </Dialog>
       </div>
 
@@ -195,12 +197,13 @@ function TasksPage() {
   );
 }
 
-function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
+function TaskDialog({ task, customers, profiles, projects, userId, onClose }: any) {
   const [form, setForm] = useState({
     title: task?.title ?? "", description: task?.description ?? "",
     status: task?.status ?? "todo", priority: task?.priority ?? "normal",
     deadline: task?.deadline ? task.deadline.slice(0,10) : "",
     customer_id: task?.customer_id ?? "", assignee_id: task?.assignee_id ?? userId ?? "",
+    project_id: task?.project_id ?? "",
     tags: (task?.tags ?? []).join(", "),
   });
 
@@ -211,6 +214,7 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
       status: form.status, priority: form.priority,
       deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
       customer_id: form.customer_id || null, assignee_id: form.assignee_id || null,
+      project_id: form.project_id || null,
       tags: form.tags.split(",").map((s: string)=>s.trim()).filter(Boolean),
       ...(task ? {} : { created_by: userId }),
     };
@@ -256,6 +260,18 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
               <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+        </div>
+        <div><Label>Project</Label>
+          <Select value={form.project_id || "none"} onValueChange={v=>{
+            const p = projects.find((x:any)=>x.id===v);
+            setForm({...form, project_id: v==="none"?"":v, ...(p ? { customer_id: p.customer_id } : {})});
+          }}>
+            <SelectTrigger><SelectValue placeholder="Geen project" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Geen</SelectItem>
+              {projects.filter((p:any)=>!form.customer_id || p.customer_id===form.customer_id).map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div><Label>Toegewezen aan</Label>
           <Select value={form.assignee_id || "none"} onValueChange={v=>setForm({...form,assignee_id: v==="none"?"":v})}>

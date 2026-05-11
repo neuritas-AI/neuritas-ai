@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Shield } from "lucide-react";
+import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 

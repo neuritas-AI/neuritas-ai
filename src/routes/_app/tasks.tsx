@@ -164,7 +164,7 @@ function TaskDialog({ task, customers, profiles, userId, onClose }: any) {
       status: form.status, priority: form.priority,
       deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
       customer_id: form.customer_id || null, assignee_id: form.assignee_id || null,
-      tags: form.tags.split(",").map(s=>s.trim()).filter(Boolean),
+      tags: form.tags.split(",").map((s: string)=>s.trim()).filter(Boolean),
       ...(task ? {} : { created_by: userId }),
     };
     const { error } = task

@@ -45,13 +45,11 @@ function AppLayout() {
     return true;
   });
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => { setMobileOpen(false); }, [path]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Laden…</div>;
   if (!user) return <Navigate to="/login" />;
-
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  // Close mobile sidebar on route change
-  useEffect(() => { setMobileOpen(false); }, [path]);
 
   const sidebarBody = (
     <>

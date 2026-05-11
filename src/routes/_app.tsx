@@ -3,7 +3,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { usePermissions } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,68 +45,85 @@ function AppLayout() {
     return true;
   });
 
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => { setMobileOpen(false); }, [path]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Laden…</div>;
   if (!user) return <Navigate to="/login" />;
+
+  const sidebarBody = (
+    <>
+      <div className="px-5 py-6 border-b">
+        <Logo className="h-8 w-auto" />
+      </div>
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {nav.map(item => {
+          const active = path === item.to || path.startsWith(item.to + "/");
+          return (
+            <Link key={item.to} to={item.to}
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
+                active
+                  ? "bg-gradient-brand text-white shadow-brand"
+                  : "hover:bg-sidebar-accent text-sidebar-foreground/75"
+              }`}>
+              <item.icon className="h-4 w-4" />
+              <span className="flex-1">{item.label}</span>
+              {item.to === "/chat" && <ChatUnreadBadge active={active} />}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="p-3 border-t space-y-2">
+        <div className="px-2 py-1.5 flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-gradient-brand grid place-items-center text-white text-xs font-semibold">
+            {(user.email ?? "?").slice(0,2).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium truncate">{user.email}</div>
+            {role && (
+              <Badge variant="outline" className={`text-[9px] mt-0.5 h-4 px-1.5 ${role === "admin" ? "border-primary/40 text-primary" : "border-muted-foreground/30"}`}>
+                {role === "admin" ? "Admin" : "Werknemer"}
+              </Badge>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={toggle} title="Thema" className="h-9 w-9">
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={signOut} title="Uitloggen" className="h-9 w-9 ml-auto"><LogOut className="h-4 w-4" /></Button>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen flex w-full bg-background">
       <aside className="w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground hidden md:flex flex-col">
-        <div className="px-5 py-6 border-b">
-          <Logo className="h-8 w-auto" />
-        </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map(item => {
-            const active = path === item.to || path.startsWith(item.to + "/");
-            return (
-              <Link key={item.to} to={item.to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-gradient-brand text-white shadow-brand"
-                    : "hover:bg-sidebar-accent text-sidebar-foreground/75"
-                }`}>
-                <item.icon className="h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
-                {item.to === "/chat" && <ChatUnreadBadge active={active} />}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-3 border-t space-y-2">
-          <div className="px-2 py-1.5 flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-gradient-brand grid place-items-center text-white text-xs font-semibold">
-              {(user.email ?? "?").slice(0,2).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium truncate">{user.email}</div>
-              {role && (
-                <Badge variant="outline" className={`text-[9px] mt-0.5 h-4 px-1.5 ${role === "admin" ? "border-primary/40 text-primary" : "border-muted-foreground/30"}`}>
-                  {role === "admin" ? "Admin" : "Werknemer"}
-                </Badge>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={toggle} title="Thema" className="h-8 w-8">
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="icon" onClick={signOut} title="Uitloggen" className="h-8 w-8 ml-auto"><LogOut className="h-4 w-4" /></Button>
-          </div>
-        </div>
+        {sidebarBody}
       </aside>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="p-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col">
+          {sidebarBody}
+        </SheetContent>
+      </Sheet>
       <main className="flex-1 min-w-0">
-        <header className="h-16 border-b flex items-center justify-between px-4 md:px-8 bg-background/80 backdrop-blur sticky top-0 z-10">
-          <div className="flex items-center gap-3 md:hidden">
+        <header className="h-16 border-b flex items-center justify-between px-3 md:px-8 bg-background/80 backdrop-blur sticky top-0 z-10 gap-2">
+          <div className="flex items-center gap-2 md:hidden min-w-0">
+            <Button variant="ghost" size="icon" className="h-10 w-10 -ml-1" onClick={() => setMobileOpen(true)} aria-label="Menu">
+              <Menu className="h-5 w-5" />
+            </Button>
             <Logo className="h-7 w-auto" />
           </div>
           <div className="hidden md:block font-display font-medium text-lg">
             {nav.find(n => path.startsWith(n.to))?.label ?? ""}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <GlobalSearch />
             <NotificationsBell />
           </div>
         </header>
-        <div className="p-4 md:p-8 max-w-[1600px] mx-auto"><Outlet /></div>
+        <div className="p-3 sm:p-4 md:p-8 max-w-[1600px] mx-auto"><Outlet /></div>
         <QuickActionsFab />
       </main>
     </div>

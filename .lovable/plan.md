@@ -1,130 +1,101 @@
-# Plan: Werkplek → Neuritas-AI uitbreiding
+# Plan: Projecten als centrale werklaag + Offertes/Facturen
 
-Behoud alle bestaande data en structuur. Geen rebuild — uitbreiding en verfijning.
+Behoud alle bestaande data. Geen rebuild — uitbreiding waarbij **projecten** de centrale entiteit worden tussen klanten en operationele data.
 
-## 1. Branding & UI
+## 1. Database wijzigingen (migratie)
 
-- Logo `Neuritas-AI` toevoegen in `src/assets/` en gebruiken in:
-  - Sidebar header (vervangt huidige briefcase-icoon + "Werkplek")
-  - Loginpagina hero
-  - Favicon / app icon (in `public/`)
-  - Browser tab title → "Neuritas-AI"
-- Design tokens in `src/styles.css` aanpassen:
-  - Primary gradient: paars (#7C3AED) → blauw (#3B82F6) (afgeleid uit logo)
-  - Nieuwe tokens: `--gradient-brand`, `--shadow-brand`, `--primary-glow`
-  - Behoud Cloud White basis, maar accenten in brand-gradient
-- UI-polish: meer whitespace, card-based layouts, gradient accent op primaire knoppen, badges en sidebar-actief item.
+### Nieuwe enums
+- `project_status`: `planned`, `active`, `on_hold`, `completed`
+- `quote_status`: `draft`, `sent`, `approved`, `rejected`
+- `invoice_status`: `to_send`, `sent`, `paid`, `overdue`
 
-## 2. Rollen: Admin + Werknemer
+### Nieuwe tabellen
 
-Database:
-- Enum `app_role` uitbreiden met `'employee'`
-- Nieuwe trigger laat `handle_new_user` standaard `'admin'` blijven voor de eerste 2 bestaande accounts (al bestaand). Nieuwe accounts via admin-flow krijgen rol op basis van keuze.
-- Kolom `customers.assigned_to uuid[]` (verantwoordelijke gebruikers)
-- Kolom `tasks.assignee_id` bestaat al — verplicht maken bij employee-flow.
-- RLS aanscherpen:
-  - `tasks`: admin = alles, employee = alleen eigen `assignee_id` of `created_by`
-  - `customers`: admin = alles, employee = alleen waar `auth.uid() = ANY(assigned_to)`
-  - `appointments`: admin = alles, employee = alleen waar in `participants`
-  - `files`: gekoppeld aan klant → zelfde regel als customers
-- Helper SQL-functie `is_admin(uid)` (gebruikt `has_role`).
+**`projects`**
+- `id`, `name`, `customer_id` (FK customers, NOT NULL), `status`, `description`
+- `assigned_to uuid[]` (verantwoordelijken)
+- `created_by`, `created_at`, `updated_at`
 
-Admin UI in `/settings`:
-- Tab "Gebruikers" — lijst, rol-toggle, nieuwe gebruiker aanmaken (via edge function met service role, omdat client-side signup geen rol kan zetten).
-- Edge function `admin-create-user` (admin-only check via JWT).
+**`quotes`** (offertes)
+- `id`, `number` (auto), `customer_id` (NOT NULL), `project_id` (optioneel)
+- `status quote_status`, `amount numeric`, `issue_date`, `notes`
+- `created_by`, timestamps
 
-## 3. Sidebar
+**`invoices`** (facturen)
+- `id`, `number` (auto), `customer_id` (NOT NULL), `project_id` (NOT NULL)
+- `status invoice_status`, `amount numeric`, `issue_date`, `due_date`, `notes`
+- `created_by`, timestamps
 
-- Verwijder "Bestanden" item uit nav.
-- Volgorde: Dashboard, Taken, Klanten, Agenda, Instellingen.
-- Toon huidige rol-badge onder gebruikersnaam.
+**`user_permissions`** (flexibele rechten per gebruiker)
+- `user_id` (PK), `can_manage_customers bool`, `can_manage_projects bool`, `can_manage_tasks bool`, `can_view_quotes bool`, `can_edit_quotes bool`, `can_view_invoices bool`, `can_edit_invoices bool`
+- Default false; admins krijgen automatisch alles via `is_admin()` check
+- Helper functie `has_permission(uid, perm_name text)` die admin-bypass + lookup combineert
 
-## 4. Bestanden → in klantendossier
+### Bestaande tabellen aanpassen
+- `tasks`: voeg `project_id uuid` toe (nullable, want bestaande taken hebben er nog geen)
+- `appointments`: voeg `project_id uuid` toe (nullable)
+- `files`: nieuwe kolom `project_id uuid` toe; `customer_id` blijft (we verbergen file-tab in customer UI maar laten data staan)
 
-- Verwijder route `/files` (`src/routes/_app/files.tsx`) en routeTree-verwijzing.
-- In `customers/$id` extra tab "Bestanden":
-  - Upload (link aan klant + optioneel taak/afspraak via dropdown van klantgerelateerde items)
-  - Lijst met download/preview, koppeling-badge zichtbaar.
-- `files` tabel blijft hetzelfde; bucket `files` blijft.
+### RLS policies
+- `projects`: select = admin OR `auth.uid() = ANY(assigned_to)` OR created_by; insert/update/delete = admin OR created_by/assigned
+- `quotes` / `invoices`: select/edit op basis van `has_permission()` + admin
+- `user_permissions`: select = admin of self; update = admin only
 
-## 5. Dashboard — rolgebaseerd
+### Triggers
+- `set_updated_at` op nieuwe tabellen
+- Auto-nummering offertes/facturen via sequence (Q-2026-0001 / F-2026-0001)
+- `log_activity` triggers op projects/quotes/invoices
 
-`/dashboard` rendert verschillend:
-- **Admin**: Taken-per-gebruiker (gegroepeerd), urgente taken (<48u), komende afspraken, klanten met status `follow_up`, activiteitenfeed (laatste 20), quick actions.
-- **Werknemer**: Mijn taken (gefilterd), mijn afspraken (gefilterd), urgente items, quick actions (taak/afspraak toevoegen).
+### Data migratie
+- Bestaande data blijft intact. Geen automatische backfill van project_id (taken/afspraken blijven gekoppeld aan klant tot user ze in een project plaatst).
 
-Quick action knoppen openen bestaande Dialogs (taak/klant/afspraak).
+## 2. Sidebar herstructurering
 
-## 6. Taken — uitbreiding
+```
+Dashboard
+Taken
+Klanten
+Projecten      ← nieuw
+Agenda
+Offertes & Facturen  ← nieuw
+Instellingen
+```
 
-Bestaande velden blijven (status/priority/deadline/assignee/customer/tags). Toevoegen:
-- View tabs: "Mijn taken" / "Vandaag" / "Deze week" / "Alle taken" (laatste alleen admin).
-- Kanban view bestond al → opfrissen met kleurcodes per priority.
-- Kleurcodering: status = kleur van kolom-/badge-rand; priority = badge.
-- Reminder = notificatie aanmaken via DB trigger 24u vóór deadline (we doen simpele aanpak: bij dashboard-load checken en notifications inserten als ze nog niet bestaan).
+## 3. Routes (nieuw / aangepast)
 
-## 7. Klanten — tabs
+**Nieuw:**
+- `/projects` (lijst + filter op status, klant, verantwoordelijke)
+- `/projects/$id` met tabs: Overzicht / Taken / Afspraken / Bestanden / Facturen
+- `/billing` (gecombineerde pagina met tabs Offertes / Facturen)
 
-Refactor `customers/$id` naar tabbed layout:
-- Overzicht (huidige info + assigned_to multi-select)
-- Taken (gekoppelde taken)
-- Afspraken (gekoppelde afspraken)
-- Notities (bestaande timeline)
-- Bestanden (zie sectie 4)
+**Aangepast:**
+- `/customers/$id`: bestanden-tab vervangen door **Projecten-tab** + **Offertes/Facturen-tab**
+- `/tasks`: dialog krijgt project-selector (klant wordt afgeleid)
+- `/calendar`: afspraak-dialog krijgt project-selector
 
-Snelle acties bovenin: + Taak, + Afspraak, + Bestand.
+## 4. UI componenten
 
-## 8. Agenda
+Nieuwe componenten in `src/components/`:
+- `ProjectStatusBadge`, `QuoteStatusBadge`, `InvoiceStatusBadge`
+- `ProjectFormDialog`, `QuoteFormDialog`, `InvoiceFormDialog`
+- `ProjectFilesTab`, `ProjectInvoicesTab`
+- `PermissionsManager` (in settings, admin-only)
 
-- Standaardview = week (was al beschikbaar).
-- Klik op afspraak opent Sheet/Dialog (detailpaneel) i.p.v. nieuwe pagina (al zo, polish).
-- Kleurkeuze per afspraak via colorpicker preset (5 kleuren).
-- Reminder-melding: notificatie 30 min vóór start (via dashboard-poll).
+QuickActionsFab uitbreiden met "+ Project", "+ Offerte", "+ Factuur".
+GlobalSearch uitbreiden met projects/quotes/invoices.
 
-## 9. Notificaties
+## 5. Rechten in UI
 
-Bestaand `notifications` tabel hergebruiken. Insertion vanuit:
-- Trigger: bij `tasks` insert/update naar assignee_id (status changes / nieuwe toewijzing).
-- Trigger: bij `appointments` insert naar elke participant.
-- Trigger: bij `customer_notes` insert naar klant `assigned_to`.
-
-Badge in header bestond al. Polish: rolafhankelijk (employee ziet eigen, admin ziet alles waar `user_id = auth.uid()`).
-
-## 10. Activiteitenlog
-
-Nieuwe tabel `activity_log`:
-- `actor_id, action, entity_type, entity_id, metadata jsonb, created_at`
-- Triggers op tasks/customers/appointments/customer_notes voor INSERT/UPDATE.
-- RLS: alleen admin kan SELECT.
-- Weergave in admin dashboard (laatste 20).
-
-## 11. Globale zoekbalk
-
-- Header `Cmd/Ctrl+K` → Command Dialog (shadcn `command`).
-- Zoekt parallel in `customers`, `tasks`, `appointments` (via `ilike` op title/name/description).
-- Resultaten → klikken navigeert naar entiteit.
-
-## 12. UX
-
-- Sticky filterbar bovenaan tasks/customers (al deels — `top-0 sticky`).
-- Floating action button (FAB) rechtsonder op mobile met "+" → opent menu (Taak/Klant/Afspraak).
-
-## Technische details
-
-- Migratie: enum-uitbreiding, kolommen, RLS-policies (drop + recreate), triggers, activity_log tabel + bucket-policies onveranderd.
-- Edge function `admin-create-user` met `verify_jwt = true`, controleert admin via `user_roles`.
-- Geen breaking changes voor bestaande accounts (blijven admin).
-- Nieuwe imports / componenten in `src/components/` voor: `Logo`, `BrandButton`, `RoleBadge`, `GlobalSearch`, `Fab`, `ActivityFeed`, `UserManagementTab`, `CustomerFilesTab`.
+- `usePermissions()` hook → returnt object `{ canManageCustomers, canManageProjects, ... }` (admin = alles true)
+- Sidebar items en routes worden geconditioneerd op rechten
+- Settings-tab "Gebruikers" krijgt rechten-matrix per niet-admin gebruiker
 
 ## Volgorde uitvoer
 
-1. Migratie (rol-enum, kolommen, RLS, triggers, activity_log) → wachten op approval.
-2. Edge function admin-create-user.
-3. Logo + design tokens + sidebar/header rebrand.
-4. Sidebar nav update + verwijder Files-route.
-5. Customer detail → tabs + bestanden-tab.
-6. Dashboard rolgebaseerd + activity feed.
-7. Tasks uitbreidingen (views, FAB).
-8. Settings → user management.
-9. Globale zoek (Cmd+K).
-10. Polish + verificatie via build.
+1. Migratie (enums, tabellen, RLS, triggers, sequences) — wachten op approval
+2. Types regeneren (automatisch na migratie)
+3. Sidebar + routes + nieuwe componenten
+4. Customer detail aanpassen (files-tab → projects-tab)
+5. Tasks/Calendar dialogs uitbreiden met project-koppeling
+6. Settings: rechten-matrix
+7. FAB + GlobalSearch uitbreiden

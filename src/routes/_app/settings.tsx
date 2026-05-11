@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { toast } from "sonner";
-import { UserPlus, Shield } from "lucide-react";
+import { UserPlus, Shield, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });

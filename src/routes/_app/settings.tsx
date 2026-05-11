@@ -217,6 +217,41 @@ function NewUserDialog({ onCreated }: any) {
   );
 }
 
+function DeleteUserButton({ userId, name, onDeleted }: { userId: string; name: string | null; onDeleted: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function remove() {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", { body: { user_id: userId } });
+    setBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message ?? "Verwijderen mislukt");
+    toast.success("Gebruiker verwijderd");
+    onDeleted();
+  }
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" title="Verwijderen">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Gebruiker verwijderen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {name ?? "Deze gebruiker"} wordt definitief verwijderd, inclusief rechten en rol. Dit kan niet ongedaan worden gemaakt.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+          <AlertDialogAction onClick={remove} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {busy ? "Bezig…" : "Verwijderen"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 function PermissionsManager({ members }: { members: any[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [perms, setPerms] = useState<Partial<Permissions>>({});

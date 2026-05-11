@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { toast } from "sonner";
-import { UserPlus, Shield } from "lucide-react";
+import { UserPlus, Shield, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
@@ -122,7 +123,12 @@ function SettingsPage() {
                         </div>
                       </div>
                     </div>
-                    {m.id !== user?.id && <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />}
+                    {m.id !== user?.id && (
+                      <div className="flex items-center gap-2">
+                        <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />
+                        <DeleteUserButton userId={m.id} name={m.full_name} onDeleted={loadMembers} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -208,6 +214,41 @@ function NewUserDialog({ onCreated }: any) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function DeleteUserButton({ userId, name, onDeleted }: { userId: string; name: string | null; onDeleted: () => void }) {
+  const [busy, setBusy] = useState(false);
+  async function remove() {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-delete-user", { body: { user_id: userId } });
+    setBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message ?? "Verwijderen mislukt");
+    toast.success("Gebruiker verwijderd");
+    onDeleted();
+  }
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" title="Verwijderen">
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Gebruiker verwijderen?</AlertDialogTitle>
+          <AlertDialogDescription>
+            {name ?? "Deze gebruiker"} wordt definitief verwijderd, inclusief rechten en rol. Dit kan niet ongedaan worden gemaakt.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+          <AlertDialogAction onClick={remove} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {busy ? "Bezig…" : "Verwijderen"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

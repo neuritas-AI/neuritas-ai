@@ -20,10 +20,10 @@ export const Route = createFileRoute("/_app")({ component: AppLayout });
 
 const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, perm: null },
-  { to: "/tasks", label: "Taken", icon: CheckSquare, perm: null },
-  { to: "/customers", label: "Klanten", icon: Users, perm: null },
-  { to: "/projects", label: "Projecten", icon: FolderKanban, perm: null },
-  { to: "/calendar", label: "Agenda", icon: Calendar, perm: null },
+  { to: "/tasks", label: "Taken", icon: CheckSquare, perm: "tasks" as const },
+  { to: "/customers", label: "Klanten", icon: Users, perm: "customers" as const },
+  { to: "/projects", label: "Projecten", icon: FolderKanban, perm: "projects" as const },
+  { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
   { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
   { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
 ] as const;

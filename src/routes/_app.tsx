@@ -36,6 +36,10 @@ function AppLayout() {
   const path = useRouterState({ select: s => s.location.pathname });
   const nav = baseNav.filter(n => {
     if (n.perm === "billing") return perms.can_view_quotes || perms.can_edit_quotes || perms.can_view_invoices || perms.can_edit_invoices;
+    if (n.perm === "customers") return perms.can_view_customers;
+    if (n.perm === "projects") return perms.can_view_projects;
+    if (n.perm === "tasks") return perms.can_view_tasks;
+    if (n.perm === "calendar") return perms.can_view_calendar;
     return true;
   });
 

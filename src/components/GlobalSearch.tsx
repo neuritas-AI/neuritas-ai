@@ -93,6 +93,20 @@ export function GlobalSearch() {
               ))}
             </CommandGroup>
           )}
+          {results.filter(r => r.type === "quote").length > 0 && (
+            <CommandGroup heading="Offertes">
+              {results.filter(r => r.type === "quote").map(r => (
+                <CommandItem key={r.id} onSelect={() => go(r)}><FileText className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {results.filter(r => r.type === "invoice").length > 0 && (
+            <CommandGroup heading="Facturen">
+              {results.filter(r => r.type === "invoice").map(r => (
+                <CommandItem key={r.id} onSelect={() => go(r)}><Receipt className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </CommandList>
       </CommandDialog>
     </>

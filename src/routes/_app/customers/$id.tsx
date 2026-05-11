@@ -110,7 +110,10 @@ function CustomerDetail() {
           <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
           <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
           <TabsTrigger value="notes">Notities ({notes.length})</TabsTrigger>
-          <TabsTrigger value="files">Bestanden ({files.length})</TabsTrigger>
+          <TabsTrigger value="projects">Projecten ({projects.length})</TabsTrigger>
+          {(perms.can_view_quotes || perms.can_view_invoices) && (
+            <TabsTrigger value="billing">Facturen ({quotes.length + invoices.length})</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="mt-5 space-y-5">

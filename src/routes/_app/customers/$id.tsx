@@ -8,7 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Send, FileText, Calendar, CheckSquare, Upload, Download, Trash2, Mail, Phone, Building2, Users as UsersIcon } from "lucide-react";
+import { ArrowLeft, Pencil, Send, Calendar, CheckSquare, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt } from "lucide-react";
+import { Badge as _B } from "@/components/ui/badge";
+import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
+import { usePermissions } from "@/lib/permissions";
 import { fmtDateTime, fmtDate, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -19,31 +22,42 @@ export const Route = createFileRoute("/_app/customers/$id")({ component: Custome
 function CustomerDetail() {
   const { id } = Route.useParams();
   const { user } = useAuth();
+  const { perms } = usePermissions();
   const [customer, setCustomer] = useState<any | null>(null);
   const [notes, setNotes] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [appts, setAppts] = useState<any[]>([]);
-  const [files, setFiles] = useState<any[]>([]);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [quotes, setQuotes] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
   const [note, setNote] = useState("");
   const [edit, setEdit] = useState(false);
 
   async function load() {
-    const [{ data: c }, { data: n }, { data: t }, { data: a }, { data: f }, { data: p }] = await Promise.all([
+    const [{ data: c }, { data: n }, { data: t }, { data: a }, { data: pj }, { data: p }] = await Promise.all([
       supabase.from("customers").select("*").eq("id", id).maybeSingle(),
       supabase.from("customer_notes").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
       supabase.from("tasks").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
       supabase.from("appointments").select("*").eq("customer_id", id).order("start_at", { ascending: false }),
-      supabase.from("files").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
+      supabase.from("projects").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name"),
     ]);
-    setCustomer(c); setNotes(n ?? []); setTasks(t ?? []); setAppts(a ?? []); setFiles(f ?? []); setProfiles(p ?? []);
+    setCustomer(c); setNotes(n ?? []); setTasks(t ?? []); setAppts(a ?? []); setProjects(pj ?? []); setProfiles(p ?? []);
+    if (perms.can_view_quotes || perms.can_edit_quotes) {
+      const { data: q } = await supabase.from("quotes").select("*").eq("customer_id", id).order("created_at", { ascending: false });
+      setQuotes(q ?? []);
+    }
+    if (perms.can_view_invoices || perms.can_edit_invoices) {
+      const { data: inv } = await supabase.from("invoices").select("*").eq("customer_id", id).order("created_at", { ascending: false });
+      setInvoices(inv ?? []);
+    }
   }
   useEffect(() => {
     load();
     const ch = supabase.channel(`c-${id}`).on("postgres_changes", { event: "*", schema: "public" }, load).subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [id]);
+  }, [id, perms.can_view_quotes, perms.can_view_invoices, perms.can_edit_quotes, perms.can_edit_invoices]);
 
   async function addNote() {
     if (!note.trim()) return;

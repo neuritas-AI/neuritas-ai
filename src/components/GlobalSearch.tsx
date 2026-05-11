@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { Search, Users, CheckSquare, Calendar } from "lucide-react";
+import { Search, Users, CheckSquare, Calendar, FolderKanban } from "lucide-react";
 
-type Result = { type: "customer"|"task"|"appointment"; id: string; label: string; sub?: string };
+type Result = { type: "customer"|"task"|"appointment"|"project"; id: string; label: string; sub?: string };
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
@@ -29,10 +29,12 @@ export function GlobalSearch() {
       supabase.from("customers").select("id,name,company").or(`name.ilike.${term},company.ilike.${term}`).limit(5),
       supabase.from("tasks").select("id,title").ilike("title", term).limit(5),
       supabase.from("appointments").select("id,title,start_at").ilike("title", term).limit(5),
-    ]).then(([c, t, a]) => {
+      supabase.from("projects").select("id,name,customers(name)").ilike("name", term).limit(5),
+    ]).then(([c, t, a, p]) => {
       if (cancelled) return;
       const r: Result[] = [];
       (c.data ?? []).forEach((x: any) => r.push({ type: "customer", id: x.id, label: x.name, sub: x.company }));
+      (p.data ?? []).forEach((x: any) => r.push({ type: "project", id: x.id, label: x.name, sub: x.customers?.name }));
       (t.data ?? []).forEach((x: any) => r.push({ type: "task", id: x.id, label: x.title }));
       (a.data ?? []).forEach((x: any) => r.push({ type: "appointment", id: x.id, label: x.title }));
       setResults(r);
@@ -43,6 +45,7 @@ export function GlobalSearch() {
   function go(r: Result) {
     setOpen(false);
     if (r.type === "customer") nav({ to: "/customers/$id", params: { id: r.id } });
+    else if (r.type === "project") nav({ to: "/projects/$id", params: { id: r.id } });
     else if (r.type === "task") nav({ to: "/tasks" });
     else nav({ to: "/calendar" });
   }
@@ -61,6 +64,13 @@ export function GlobalSearch() {
             <CommandGroup heading="Klanten">
               {results.filter(r => r.type === "customer").map(r => (
                 <CommandItem key={r.id} onSelect={() => go(r)}><Users className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {results.filter(r => r.type === "project").length > 0 && (
+            <CommandGroup heading="Projecten">
+              {results.filter(r => r.type === "project").map(r => (
+                <CommandItem key={r.id} onSelect={() => go(r)}><FolderKanban className="h-4 w-4 mr-2" />{r.label}{r.sub && <span className="text-muted-foreground ml-2 text-xs">{r.sub}</span>}</CommandItem>
               ))}
             </CommandGroup>
           )}

@@ -145,6 +145,11 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
             <SelectContent>{PROJECT_STATUSES.map(s=> <SelectItem key={s} value={s}>{projectStatusLabel[s]}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        {PROJECT_STATUS_REQUIRES_REASON.has(form.status) && (
+          <div><Label>Reden *</Label>
+            <Textarea rows={2} value={form.status_reason} onChange={e=>setForm({...form, status_reason: e.target.value})} placeholder="Waarom is dit project on hold / verloren?" />
+          </div>
+        )}
         <div><Label>Beschrijving</Label><Textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
         {profiles && profiles.length > 0 && (
           <div>

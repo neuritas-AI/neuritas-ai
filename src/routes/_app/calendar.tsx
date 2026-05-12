@@ -293,7 +293,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
           <Select value={form.appointment_type} onValueChange={v=>setForm({...form, appointment_type: v})}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {APPT_TYPES.map(t => (
+              {(types ?? []).map((t: ApptType) => (
                 <SelectItem key={t.key} value={t.key}>
                   <span className="inline-flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />

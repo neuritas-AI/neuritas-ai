@@ -160,12 +160,12 @@ export type Database = {
       customers: {
         Row: {
           assigned_to: string[]
-          company: string | null
+          company: string
           created_at: string
           created_by: string | null
           email: string | null
           id: string
-          name: string
+          name: string | null
           notes: string | null
           phone: string | null
           status: Database["public"]["Enums"]["customer_status"]
@@ -173,12 +173,12 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string[]
-          company?: string | null
+          company: string
           created_at?: string
           created_by?: string | null
           email?: string | null
           id?: string
-          name: string
+          name?: string | null
           notes?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
@@ -186,12 +186,12 @@ export type Database = {
         }
         Update: {
           assigned_to?: string[]
-          company?: string | null
+          company?: string
           created_at?: string
           created_by?: string | null
           email?: string | null
           id?: string
-          name?: string
+          name?: string | null
           notes?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
@@ -386,6 +386,7 @@ export type Database = {
       }
       project_meetings: {
         Row: {
+          appointment_id: string | null
           conducted_by: string | null
           created_at: string
           created_by: string | null
@@ -398,6 +399,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_id?: string | null
           conducted_by?: string | null
           created_at?: string
           created_by?: string | null
@@ -410,6 +412,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_id?: string | null
           conducted_by?: string | null
           created_at?: string
           created_by?: string | null
@@ -527,6 +530,7 @@ export type Database = {
       tasks: {
         Row: {
           assignee_id: string | null
+          assignee_ids: string[]
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -542,6 +546,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          assignee_ids?: string[]
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -557,6 +562,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          assignee_ids?: string[]
           created_at?: string
           created_by?: string | null
           customer_id?: string | null

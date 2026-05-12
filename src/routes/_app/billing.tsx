@@ -95,7 +95,7 @@ function BillingPage() {
                   {quotes.map(q => (
                     <tr key={q.id} className="border-t hover:bg-accent/30 cursor-pointer" onClick={()=>perms.can_edit_quotes && setQDlg(q)}>
                       <td className="p-3 font-medium">{q.number}</td>
-                      <td className="p-3">{q.customers?.name ?? "—"}</td>
+                      <td className="p-3">{q.customers ? customerLabel(q.customers) : "—"}</td>
                       <td className="p-3 text-muted-foreground">{q.projects?.name ?? "—"}</td>
                       <td className="p-3">{fmtDate(q.issue_date)}</td>
                       <td className="p-3 text-right font-medium">{fmtMoney(q.amount)}</td>

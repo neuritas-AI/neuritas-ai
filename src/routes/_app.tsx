@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { usePermissions } from "@/lib/permissions";

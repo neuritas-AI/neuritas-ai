@@ -165,12 +165,14 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
-    color: appt.color, customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
+    appointment_type: appt.appointment_type ?? "client_meeting",
+    customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
   } : {
     title: "", description: "",
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
-    color: COLORS[0], customer_id: "", project_id: "",
+    appointment_type: "client_meeting",
+    customer_id: "", project_id: "",
   };
   const [form, setForm] = useState(init);
 

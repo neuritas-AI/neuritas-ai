@@ -148,7 +148,66 @@ function SettingsPage() {
             </Card>
           </TabsContent>
         )}
+        {isAdmin && (
+          <TabsContent value="appttypes" className="mt-5">
+            <Card className="p-6 space-y-4">
+              <div>
+                <h2 className="font-display font-semibold">Agenda types</h2>
+                <p className="text-xs text-muted-foreground mt-1">Beheer types afspraken en hun kleur. Geldt voor de volledige agenda.</p>
+              </div>
+              <ApptTypesManager />
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
+    </div>
+  );
+}
+
+function ApptTypesManager() {
+  const [items, setItems] = useState<any[]>([]);
+  const [form, setForm] = useState({ label: "", color: "#3b82f6" });
+  async function load() {
+    const { data } = await supabase.from("appointment_types").select("*").order("sort_order");
+    setItems(data ?? []);
+  }
+  useEffect(() => { load(); }, []);
+  async function add() {
+    if (!form.label.trim()) return toast.error("Naam verplicht");
+    const key = form.label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") + "_" + Date.now().toString(36);
+    const { error } = await supabase.from("appointment_types").insert({ key, label: form.label.trim(), color: form.color, sort_order: items.length + 1 });
+    if (error) return toast.error(error.message);
+    setForm({ label: "", color: "#3b82f6" });
+    load();
+  }
+  async function update(id: string, patch: any) {
+    const { error } = await supabase.from("appointment_types").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+  async function del(id: string) {
+    if (!confirm("Type verwijderen? Bestaande afspraken behouden hun kleur.")) return;
+    const { error } = await supabase.from("appointment_types").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    load();
+  }
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        {items.map(t => (
+          <div key={t.id} className="flex items-center gap-2 border rounded-lg p-2">
+            <Input type="color" value={t.color} onChange={e => update(t.id, { color: e.target.value })} className="w-12 h-9 p-1 cursor-pointer" />
+            <Input value={t.label} onChange={e => update(t.id, { label: e.target.value })} className="flex-1" />
+            <Button variant="ghost" size="icon" onClick={() => del(t.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+          </div>
+        ))}
+        {items.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nog geen types — voeg er hieronder een toe.</p>}
+      </div>
+      <div className="flex items-center gap-2 border-t pt-3">
+        <Input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} className="w-12 h-9 p-1 cursor-pointer" />
+        <Input placeholder="Bijv. Netwerken, Beurs, Workshop" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} className="flex-1" />
+        <Button onClick={add} className="bg-gradient-brand border-0">Toevoegen</Button>
+      </div>
     </div>
   );
 }

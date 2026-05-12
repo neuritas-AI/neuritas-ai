@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_app/calendar")({
   validateSearch: (s: Record<string, unknown>) => ({ appt: typeof s.appt === "string" ? s.appt : undefined }),
 });
 
-type ApptType = { id: string; key: string; label: string; color: string; sort_order: number };
+type ApptType = { id: string; key: string; label: string; color: string; sort_order: number; requires_attendance?: boolean };
 const TASK_COLOR = "#f97316";
 
 function CalendarPage() {
@@ -224,14 +224,17 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
   };
   const [form, setForm] = useState<any>(init);
   const [attendance, setAttendance] = useState<any[]>([]);
-  const isInternal = form.appointment_type === "internal";
+  const currentType = (types ?? []).find((t: ApptType) => t.key === form.appointment_type);
+  const requiresAttendance = !!currentType?.requires_attendance;
   const isNew = !appt;
-  const blockedNew = isNew && isInternal && !isAdmin;
+  const blockedNew = isNew && requiresAttendance && !isAdmin;
 
   useEffect(() => {
-    if (!appt || appt.appointment_type !== "internal") { setAttendance([]); return; }
+    if (!appt) { setAttendance([]); return; }
+    const t = (types ?? []).find((x: ApptType) => x.key === appt.appointment_type);
+    if (!t?.requires_attendance) { setAttendance([]); return; }
     supabase.from("appointment_attendance").select("*").eq("appointment_id", appt.id).then(({ data }) => setAttendance(data ?? []));
-  }, [appt?.id, appt?.appointment_type]);
+  }, [appt?.id, appt?.appointment_type, types]);
 
   async function setMyStatus(status: "accepted"|"declined") {
     if (!appt || !userId) return;
@@ -250,7 +253,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
 
   async function save() {
     if (!form.title.trim()) return toast.error("Titel verplicht");
-    if (blockedNew) return toast.error("Alleen admins kunnen intern overleg aanmaken");
+    if (blockedNew) return toast.error("Alleen admins kunnen dit type aanmaken");
     const payload: any = {
       title: form.title, description: form.description || null,
       start_at: new Date(form.start_at).toISOString(),
@@ -259,7 +262,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
       color: TYPE_COLOR[form.appointment_type as keyof typeof TYPE_COLOR] ?? "#3b82f6",
       customer_id: form.customer_id || null,
       project_id: form.project_id || null,
-      participants: isInternal ? form.participants : (appt?.participants ?? (userId ? [userId] : [])),
+      participants: requiresAttendance ? form.participants : (appt?.participants ?? (userId ? [userId] : [])),
     };
     if (!appt) { payload.created_by = userId; }
     const { error } = appt
@@ -303,10 +306,10 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
               ))}
             </SelectContent>
           </Select>
-          {blockedNew && <p className="text-xs text-destructive mt-1">Alleen admins kunnen intern overleg aanmaken.</p>}
+          {blockedNew && <p className="text-xs text-destructive mt-1">Alleen admins kunnen dit type aanmaken.</p>}
         </div>
 
-        {!isInternal && (
+        {!requiresAttendance && (
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Klant</Label>
               <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
@@ -329,7 +332,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
           </div>
         )}
 
-        {isInternal && (
+        {requiresAttendance && (
           <div className="space-y-2">
             <Label>Deelnemers</Label>
             {(isAdmin || isNew) ? (

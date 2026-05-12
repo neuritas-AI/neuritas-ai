@@ -140,11 +140,13 @@ function TasksPage() {
                   <Badge variant="outline">{filtered.filter(t => t.status === s).length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {filtered.filter(t => t.status === s).map(t => (
+                  {filtered.filter(t => t.status === s).map(t => {
+                    const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
+                    return (
                     <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
                       <div className="font-medium text-sm">{t.title}</div>
-                      {t.customers?.name && <div className="text-xs text-muted-foreground mt-0.5">{t.customers.name}</div>}
+                      {t.customers && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}
                       <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
                         <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
                         {t.deadline && (
@@ -153,13 +155,22 @@ function TasksPage() {
                           </span>
                         )}
                       </div>
+                      {assignees.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {assignees.map((a: any) => (
+                            <span key={a.id} className="text-[10px] bg-gradient-brand-soft text-primary px-1.5 py-0.5 rounded-full">
+                              {a.full_name ?? "—"}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                         {STATUSES.filter(x => x !== s).map(x => (
                           <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  );})}
                   {filtered.filter(t => t.status === s).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Geen taken</p>}
                 </div>
               </Card>

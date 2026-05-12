@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2, Pencil, Calendar as CalIcon } from "lucide-react";
 import { fmtDate, isOverdue, isUrgent, priorityColor, priorityLabel, statusColor, statusLabel, statusKanbanAccent } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";

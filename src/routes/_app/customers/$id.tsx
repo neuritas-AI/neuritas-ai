@@ -81,11 +81,11 @@ function CustomerDetail() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-4">
               <div className="h-16 w-16 rounded-2xl bg-gradient-brand grid place-items-center text-white text-xl font-semibold shadow-brand shrink-0">
-                {customer.name.slice(0,2).toUpperCase()}
+                {(customer.company || customer.name || "?").slice(0,2).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-3xl font-display font-semibold">{customer.name}</h1>
-                {customer.company && <p className="text-muted-foreground flex items-center gap-1.5 mt-0.5"><Building2 className="h-3.5 w-3.5" />{customer.company}</p>}
+                <h1 className="text-3xl font-display font-semibold flex items-center gap-2"><Building2 className="h-6 w-6 text-muted-foreground" />{customer.company || customer.name}</h1>
+                {customer.name && customer.name !== customer.company && <p className="text-muted-foreground mt-0.5">Contact: {customer.name}</p>}
                 <div className="flex flex-wrap gap-3 mt-3 text-sm">
                   {customer.email && <a href={`mailto:${customer.email}`} className="inline-flex items-center gap-1.5 hover:text-primary"><Mail className="h-3.5 w-3.5" />{customer.email}</a>}
                   {customer.phone && <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1.5 hover:text-primary"><Phone className="h-3.5 w-3.5" />{customer.phone}</a>}

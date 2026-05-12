@@ -42,7 +42,7 @@ function ProjectsPage() {
 
   const filtered = items.filter(p =>
     (statusFilter === "all" || p.status === statusFilter) &&
-    (!search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.customers?.name ?? "").toLowerCase().includes(search.toLowerCase()))
+    (!search || p.name.toLowerCase().includes(search.toLowerCase()) || customerLabel(p.customers).toLowerCase().includes(search.toLowerCase()))
   );
 
   return (

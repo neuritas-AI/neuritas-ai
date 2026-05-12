@@ -4,7 +4,8 @@ import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { usePermissions } from "@/lib/permissions";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,6 +105,7 @@ function AppLayout() {
       </aside>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="p-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col">
+          <VisuallyHidden><SheetTitle>Navigatie menu</SheetTitle></VisuallyHidden>
           {sidebarBody}
         </SheetContent>
       </Sheet>

@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Receipt, FileSignature } from "lucide-react";
 import { fmtDate } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";
@@ -27,11 +28,11 @@ function BillingPage() {
 
   async function load() {
     const tasks: any[] = [
-      supabase.from("customers").select("id,name").order("name"),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
     ];
-    if (perms.can_view_quotes || perms.can_edit_quotes) tasks.push(supabase.from("quotes").select("*, customers(name), projects(name)").order("created_at", { ascending: false }));
-    if (perms.can_view_invoices || perms.can_edit_invoices) tasks.push(supabase.from("invoices").select("*, customers(name), projects(name)").order("created_at", { ascending: false }));
+    if (perms.can_view_quotes || perms.can_edit_quotes) tasks.push(supabase.from("quotes").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }));
+    if (perms.can_view_invoices || perms.can_edit_invoices) tasks.push(supabase.from("invoices").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }));
     const res = await Promise.all(tasks);
     setCustomers(res[0].data ?? []); setProjects(res[1].data ?? []);
     let i = 2;
@@ -94,7 +95,7 @@ function BillingPage() {
                   {quotes.map(q => (
                     <tr key={q.id} className="border-t hover:bg-accent/30 cursor-pointer" onClick={()=>perms.can_edit_quotes && setQDlg(q)}>
                       <td className="p-3 font-medium">{q.number}</td>
-                      <td className="p-3">{q.customers?.name ?? "—"}</td>
+                      <td className="p-3">{q.customers ? customerLabel(q.customers) : "—"}</td>
                       <td className="p-3 text-muted-foreground">{q.projects?.name ?? "—"}</td>
                       <td className="p-3">{fmtDate(q.issue_date)}</td>
                       <td className="p-3 text-right font-medium">{fmtMoney(q.amount)}</td>
@@ -122,7 +123,7 @@ function BillingPage() {
                   {invoices.map(inv => (
                     <tr key={inv.id} className="border-t hover:bg-accent/30 cursor-pointer" onClick={()=>perms.can_edit_invoices && setIDlg(inv)}>
                       <td className="p-3 font-medium">{inv.number}</td>
-                      <td className="p-3">{inv.customers?.name ?? "—"}</td>
+                      <td className="p-3">{inv.customers ? customerLabel(inv.customers) : "—"}</td>
                       <td className="p-3 text-muted-foreground">{inv.projects?.name ?? "—"}</td>
                       <td className="p-3">{fmtDate(inv.issue_date)}</td>
                       <td className="p-3">{inv.due_date ? fmtDate(inv.due_date) : "—"}</td>

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckSquare, Users, Calendar, Plus, AlertTriangle, Activity, Clock } from "lucide-react";
 import { fmtDate, fmtDateTime, isOverdue, isUrgent, priorityColor, statusColor, statusLabel, priorityLabel } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { formatDistanceToNow } from "date-fns";
@@ -24,8 +25,8 @@ function Dashboard() {
 
   async function load() {
     const [{ data: t }, { data: a }, { data: c }, { data: p }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name)").neq("status", "done").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
-      supabase.from("appointments").select("*, customers(name)").gte("end_at", new Date().toISOString()).order("start_at").limit(10),
+      supabase.from("tasks").select("*, customers(name, company)").neq("status", "done").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
+      supabase.from("appointments").select("*, customers(name, company)").gte("end_at", new Date().toISOString()).order("start_at").limit(10),
       supabase.from("customers").select("*").order("updated_at", { ascending: false }).limit(20),
       supabase.from("profiles").select("id, full_name"),
     ]);
@@ -43,7 +44,10 @@ function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, [role, isAdmin]);
 
-  const myTasks = tasks.filter(t => t.assignee_id === user?.id);
+  const myTasks = tasks.filter(t => {
+    const ids = (t.assignee_ids ?? []) as string[];
+    return user ? (t.assignee_id === user.id || ids.includes(user.id)) : false;
+  });
   const urgentTasks = tasks.filter(t => isUrgent(t.deadline, t.status));
   const followUpCustomers = customers.filter(c => c.status === "follow_up");
 
@@ -86,7 +90,7 @@ function Dashboard() {
               <Link key={t.id} to="/tasks" className="flex items-center justify-between p-2.5 rounded-lg bg-card hover:shadow-soft transition-all">
                 <div>
                   <div className="font-medium text-sm">{t.title}</div>
-                  <div className="text-xs text-muted-foreground">{t.customers?.name && `${t.customers.name} · `}{fmtDate(t.deadline)}</div>
+                  <div className="text-xs text-muted-foreground">{t.customers && `${customerLabel(t.customers)} · `}{fmtDate(t.deadline)}</div>
                 </div>
                 <Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge>
               </Link>
@@ -112,7 +116,7 @@ function Dashboard() {
                       {isOverdue(t.deadline, t.status) && <Badge variant="destructive" className="text-[10px]">Te laat</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 items-center">
-                      {t.customers?.name && <span>{t.customers.name}</span>}
+                      {t.customers && <span>{customerLabel(t.customers)}</span>}
                       {t.deadline && <span>· {fmtDate(t.deadline)}</span>}
                     </div>
                   </div>
@@ -135,7 +139,7 @@ function Dashboard() {
                 <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{a.title}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)} {a.customers?.name && `· ${a.customers.name}`}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)} {a.customers && `· ${customerLabel(a.customers)}`}</div>
                 </div>
               </div>
             ))}
@@ -171,8 +175,8 @@ function Dashboard() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {followUpCustomers.slice(0,6).map(c => (
               <Link key={c.id} to="/customers/$id" params={{ id: c.id }} className="p-3 rounded-lg border hover:border-primary/40 transition-colors">
-                <div className="font-medium">{c.name}</div>
-                <div className="text-xs text-muted-foreground">{c.company ?? "—"}</div>
+                <div className="font-medium">{customerLabel(c)}</div>
+                {c.name && c.name !== c.company && <div className="text-xs text-muted-foreground">{c.name}</div>}
                 <Badge className={`${statusColor[c.status]} mt-2`}>{statusLabel[c.status]}</Badge>
               </Link>
             ))}

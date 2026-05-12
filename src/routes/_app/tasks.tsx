@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Plus, Trash2, Pencil, Calendar as CalIcon } from "lucide-react";
 import { fmtDate, isOverdue, isUrgent, priorityColor, priorityLabel, statusColor, statusLabel, statusKanbanAccent } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
@@ -38,8 +39,8 @@ function TasksPage() {
   const [projects, setProjects] = useState<any[]>([]);
   async function load() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name), projects(name)").order("created_at", { ascending: false }),
-      supabase.from("customers").select("id, name").order("name"),
+      supabase.from("tasks").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);
@@ -54,7 +55,10 @@ function TasksPage() {
   const viewFiltered = useMemo(() => {
     const today = new Date();
     return tasks.filter(t => {
-      if (view === "mine") return t.assignee_id === user?.id;
+      if (view === "mine") {
+        const ids = (t.assignee_ids ?? []) as string[];
+        return user ? (ids.includes(user.id) || t.assignee_id === user.id) : false;
+      }
       if (view === "today") return t.deadline && isSameDay(new Date(t.deadline), today);
       if (view === "week") return t.deadline && isWithinInterval(new Date(t.deadline), { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) });
       return true;
@@ -136,11 +140,13 @@ function TasksPage() {
                   <Badge variant="outline">{filtered.filter(t => t.status === s).length}</Badge>
                 </div>
                 <div className="space-y-2">
-                  {filtered.filter(t => t.status === s).map(t => (
+                  {filtered.filter(t => t.status === s).map(t => {
+                    const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
+                    return (
                     <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
                       <div className="font-medium text-sm">{t.title}</div>
-                      {t.customers?.name && <div className="text-xs text-muted-foreground mt-0.5">{t.customers.name}</div>}
+                      {t.customers && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}
                       <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
                         <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
                         {t.deadline && (
@@ -149,13 +155,22 @@ function TasksPage() {
                           </span>
                         )}
                       </div>
+                      {assignees.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {assignees.map((a: any) => (
+                            <span key={a.id} className="text-[10px] bg-gradient-brand-soft text-primary px-1.5 py-0.5 rounded-full">
+                              {a.full_name ?? "—"}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                         {STATUSES.filter(x => x !== s).map(x => (
                           <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  );})}
                   {filtered.filter(t => t.status === s).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Geen taken</p>}
                 </div>
               </Card>
@@ -181,7 +196,7 @@ function TasksPage() {
                     <td className="p-3"><Badge className={statusColor[t.status]}>{statusLabel[t.status]}</Badge></td>
                     <td className="p-3"><Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge></td>
                     <td className="p-3">{t.deadline ? <span className={isOverdue(t.deadline,t.status)?"text-destructive":""}>{fmtDate(t.deadline)}</span> : "—"}</td>
-                    <td className="p-3 text-muted-foreground">{t.customers?.name ?? "—"}</td>
+                    <td className="p-3 text-muted-foreground">{t.customers ? customerLabel(t.customers) : "—"}</td>
                     <td className="p-3 text-right">
                       <Button size="icon" variant="ghost" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => deleteTask(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -198,14 +213,22 @@ function TasksPage() {
 }
 
 function TaskDialog({ task, customers, profiles, projects, userId, onClose }: any) {
+  const initialAssignees: string[] = (task?.assignee_ids && task.assignee_ids.length)
+    ? task.assignee_ids
+    : (task?.assignee_id ? [task.assignee_id] : (userId ? [userId] : []));
   const [form, setForm] = useState({
     title: task?.title ?? "", description: task?.description ?? "",
     status: task?.status ?? "todo", priority: task?.priority ?? "normal",
     deadline: task?.deadline ? task.deadline.slice(0,10) : "",
-    customer_id: task?.customer_id ?? "", assignee_id: task?.assignee_id ?? userId ?? "",
+    customer_id: task?.customer_id ?? "",
+    assignee_ids: initialAssignees,
     project_id: task?.project_id ?? "",
     tags: (task?.tags ?? []).join(", "),
   });
+
+  function toggleAssignee(uid: string) {
+    setForm(f => ({ ...f, assignee_ids: f.assignee_ids.includes(uid) ? f.assignee_ids.filter((x: string) => x !== uid) : [...f.assignee_ids, uid] }));
+  }
 
   async function save() {
     if (!form.title.trim()) return toast.error("Titel verplicht");
@@ -213,7 +236,9 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
       title: form.title, description: form.description || null,
       status: form.status, priority: form.priority,
       deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
-      customer_id: form.customer_id || null, assignee_id: form.assignee_id || null,
+      customer_id: form.customer_id || null,
+      assignee_id: form.assignee_ids[0] ?? null,
+      assignee_ids: form.assignee_ids,
       project_id: form.project_id || null,
       tags: form.tags.split(",").map((s: string)=>s.trim()).filter(Boolean),
       ...(task ? {} : { created_by: userId }),
@@ -257,7 +282,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
           <div><Label>Klant</Label>
             <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
               <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
@@ -273,11 +298,19 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Toegewezen aan</Label>
-          <Select value={form.assignee_id || "none"} onValueChange={v=>setForm({...form,assignee_id: v==="none"?"":v})}>
-            <SelectTrigger><SelectValue placeholder="Niemand" /></SelectTrigger>
-            <SelectContent><SelectItem value="none">Niemand</SelectItem>{profiles.map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0,6)}</SelectItem>)}</SelectContent>
-          </Select>
+        <div><Label>Toegewezen aan ({form.assignee_ids.length})</Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {profiles.map((p: any) => {
+              const active = form.assignee_ids.includes(p.id);
+              return (
+                <button key={p.id} type="button" onClick={()=>toggleAssignee(p.id)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-all ${active ? "bg-gradient-brand text-white border-transparent shadow-brand" : "border-border hover:border-primary/40"}`}>
+                  {p.full_name ?? p.id.slice(0,6)}
+                </button>
+              );
+            })}
+            {profiles.length === 0 && <span className="text-xs text-muted-foreground">Geen teamleden</span>}
+          </div>
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
       </div>

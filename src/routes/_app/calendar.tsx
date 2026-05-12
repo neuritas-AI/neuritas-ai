@@ -14,6 +14,7 @@ import { nl } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { fmtTime } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
 
@@ -31,8 +32,8 @@ function CalendarPage() {
 
   async function load() {
     const [{ data: a }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("appointments").select("*, customers(name)").order("start_at"),
-      supabase.from("customers").select("id,name").order("name"),
+      supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
     ]);
     setAppts(a ?? []); setCustomers(c ?? []); setProjects(pr ?? []);
@@ -128,7 +129,7 @@ function CalendarPage() {
                       <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: a.color }}>
                         <div className="font-medium">{a.title}</div>
                         <div>{fmtTime(a.start_at)} – {fmtTime(a.end_at)}</div>
-                        {a.customers?.name && <div className="opacity-80">{a.customers.name}</div>}
+                        {a.customers && <div className="opacity-80">{customerLabel(a.customers)}</div>}
                       </button>
                     ))}
                   </div>
@@ -192,7 +193,7 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
           <div><Label>Klant</Label>
             <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
               <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>Project</Label>

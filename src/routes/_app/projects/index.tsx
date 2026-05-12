@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, ChevronRight, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { customerLabel } from "@/lib/customer-label";
 import { PROJECT_STATUSES, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
 
 export const Route = createFileRoute("/_app/projects/")({ component: ProjectsPage });
@@ -27,8 +28,8 @@ function ProjectsPage() {
 
   async function load() {
     const [{ data: p }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("projects").select("*, customers(name)").order("updated_at", { ascending: false }),
-      supabase.from("customers").select("id,name").order("name"),
+      supabase.from("projects").select("*, customers(name, company)").order("updated_at", { ascending: false }),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
     ]);
     setItems(p ?? []); setCustomers(c ?? []); setProfiles(pr ?? []);
@@ -41,7 +42,7 @@ function ProjectsPage() {
 
   const filtered = items.filter(p =>
     (statusFilter === "all" || p.status === statusFilter) &&
-    (!search || p.name.toLowerCase().includes(search.toLowerCase()) || (p.customers?.name ?? "").toLowerCase().includes(search.toLowerCase()))
+    (!search || p.name.toLowerCase().includes(search.toLowerCase()) || customerLabel(p.customers).toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -81,7 +82,7 @@ function ProjectsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-display font-semibold truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{p.customers?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
                   {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -126,7 +127,7 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
             <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Status</Label>

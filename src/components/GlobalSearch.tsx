@@ -29,14 +29,14 @@ export function GlobalSearch() {
       supabase.from("customers").select("id,name,company").or(`name.ilike.${term},company.ilike.${term}`).limit(5),
       supabase.from("tasks").select("id,title").ilike("title", term).limit(5),
       supabase.from("appointments").select("id,title,start_at").ilike("title", term).limit(5),
-      supabase.from("projects").select("id,name,customers(name)").ilike("name", term).limit(5),
+      supabase.from("projects").select("id,name,customers(name, company)").ilike("name", term).limit(5),
       supabase.from("invoices").select("id,number,amount").ilike("number", term).limit(5),
       supabase.from("quotes").select("id,number,amount").ilike("number", term).limit(5),
     ]).then(([c, t, a, p, inv, qu]) => {
       if (cancelled) return;
       const r: Result[] = [];
-      (c.data ?? []).forEach((x: any) => r.push({ type: "customer", id: x.id, label: x.name, sub: x.company }));
-      (p.data ?? []).forEach((x: any) => r.push({ type: "project", id: x.id, label: x.name, sub: x.customers?.name }));
+      (c.data ?? []).forEach((x: any) => r.push({ type: "customer", id: x.id, label: x.company || x.name, sub: x.company && x.name && x.company !== x.name ? x.name : undefined }));
+      (p.data ?? []).forEach((x: any) => r.push({ type: "project", id: x.id, label: x.name, sub: x.customers?.company || x.customers?.name }));
       (t.data ?? []).forEach((x: any) => r.push({ type: "task", id: x.id, label: x.title }));
       (a.data ?? []).forEach((x: any) => r.push({ type: "appointment", id: x.id, label: x.title }));
       (inv.data ?? []).forEach((x: any) => r.push({ type: "invoice", id: x.id, label: x.number, sub: `€ ${x.amount}` }));

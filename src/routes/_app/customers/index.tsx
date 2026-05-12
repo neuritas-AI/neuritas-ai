@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ChevronRight, Building2 } from "lucide-react";
 import { statusColor, statusLabel } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 
@@ -42,7 +43,7 @@ function CustomersPage() {
 
   const filtered = items.filter(c =>
     (statusFilter === "all" || c.status === statusFilter) &&
-    (!search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.company ?? "").toLowerCase().includes(search.toLowerCase()))
+    (!search || (c.company ?? "").toLowerCase().includes(search.toLowerCase()) || (c.name ?? "").toLowerCase().includes(search.toLowerCase()))
   );
 
   async function del(id: string, e: React.MouseEvent) {
@@ -85,11 +86,11 @@ function CustomersPage() {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-start gap-3">
                 <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center font-semibold shrink-0">
-                  {c.name.slice(0,2).toUpperCase()}
+                  {customerLabel(c).slice(0,2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display font-semibold truncate">{c.name}</div>
-                  {c.company && <div className="text-xs text-muted-foreground flex items-center gap-1 truncate"><Building2 className="h-3 w-3" />{c.company}</div>}
+                  <div className="font-display font-semibold truncate flex items-center gap-1"><Building2 className="h-4 w-4 text-muted-foreground shrink-0" />{customerLabel(c)}</div>
+                  {c.name && c.name !== c.company && <div className="text-xs text-muted-foreground truncate">{c.name}</div>}
                   <div className="text-xs text-muted-foreground mt-1 truncate">{c.email ?? c.phone ?? ""}</div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -116,8 +117,8 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
     setForm(f => ({ ...f, assigned_to: f.assigned_to.includes(uid) ? f.assigned_to.filter((x: string)=>x!==uid) : [...f.assigned_to, uid] }));
   }
   async function save() {
-    if (!form.name.trim()) return toast.error("Naam verplicht");
-    const payload = { ...form, ...(customer ? {} : { created_by: userId }) };
+    if (!form.company.trim()) return toast.error("Bedrijfsnaam verplicht");
+    const payload = { ...form, name: form.name.trim() || null, ...(customer ? {} : { created_by: userId }) };
     const { error } = customer
       ? await supabase.from("customers").update(payload).eq("id", customer.id)
       : await supabase.from("customers").insert(payload as any);
@@ -128,8 +129,8 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{customer?"Klant bewerken":"Nieuwe klant"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
-        <div><Label>Bedrijf</Label><Input value={form.company} onChange={e=>setForm({...form,company:e.target.value})} /></div>
+        <div><Label>Bedrijfsnaam *</Label><Input value={form.company} onChange={e=>setForm({...form,company:e.target.value})} placeholder="Acme BV" /></div>
+        <div><Label>Contactpersoon</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Optioneel" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} /></div>
           <div><Label>Telefoon</Label><Input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} /></div>

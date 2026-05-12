@@ -230,12 +230,20 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
             </Select>
           </div>
         </div>
-        <div><Label>Kleur</Label>
-          <div className="flex gap-2 mt-1">
-            {COLORS.map(c => (
-              <button key={c} type="button" onClick={()=>setForm({...form,color:c})} className={`h-7 w-7 rounded-full ${form.color===c?"ring-2 ring-offset-2 ring-foreground":""}`} style={{ background: c }} />
-            ))}
-          </div>
+        <div><Label>Type afspraak</Label>
+          <Select value={form.appointment_type} onValueChange={v=>setForm({...form, appointment_type: v})}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {APPT_TYPES.map(t => (
+                <SelectItem key={t.key} value={t.key}>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+                    {t.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter className="gap-2">

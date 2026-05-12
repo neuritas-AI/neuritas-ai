@@ -283,7 +283,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
   }
 
   return (
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{task ? "Taak bewerken" : "Nieuwe taak"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>Titel *</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>

@@ -30,7 +30,7 @@ export const invoiceStatusColor: Record<string, string> = {
   overdue: "bg-rose-100 text-rose-700 border-rose-200",
 };
 
-export const PROJECT_STATUSES = ["planned","active","on_hold","completed"] as const;
+export const PROJECT_STATUSES = ["planned","active","on_hold","completed","lost"] as const;
 export const QUOTE_STATUSES = ["draft","sent","approved","rejected"] as const;
 export const INVOICE_STATUSES = ["to_send","sent","paid","overdue"] as const;
 

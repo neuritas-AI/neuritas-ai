@@ -139,7 +139,7 @@ function Dashboard() {
                 <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{a.title}</div>
-                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)} {a.customers?.name && `· ${a.customers.name}`}</div>
+                  <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)} {a.customers && `· ${customerLabel(a.customers)}`}</div>
                 </div>
               </div>
             ))}

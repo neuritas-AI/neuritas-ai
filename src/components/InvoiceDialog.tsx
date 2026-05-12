@@ -118,6 +118,7 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
           <div><Label>Vervaldatum</Label><Input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} /></div>
         </div>
         <div><Label>Notities</Label><Textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} /></div>
+        {invoice?.id && <BillingFiles kind="invoice" parentId={invoice.id} customerId={form.customer_id} userId={userId} />}
       </div>
       <DialogFooter className="gap-2">
         {invoice && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

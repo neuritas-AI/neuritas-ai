@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_attendance: {
+        Row: {
+          appointment_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_type: string
@@ -679,6 +700,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dispatch_reminders: { Args: never; Returns: undefined }
       has_permission: {
         Args: { _perm: string; _uid: string }
         Returns: boolean

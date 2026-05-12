@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Navigate, Link, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Navigate, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
@@ -135,7 +135,9 @@ function AppLayout() {
 
 function NotificationsBell() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Array<{id:string;title:string;body:string|null;read:boolean;created_at:string;link:string|null}>>([]);
+  const [open, setOpen] = useState(false);
 
   async function load() {
     const { data } = await supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(20);
@@ -144,7 +146,7 @@ function NotificationsBell() {
   useEffect(() => {
     if (!user) return;
     load();
-    const ch = supabase.channel("notifs")
+    const ch = supabase.channel(`notifs-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -154,9 +156,14 @@ function NotificationsBell() {
   async function markAll() {
     await supabase.from("notifications").update({ read: true }).eq("read", false);
   }
+  async function openItem(n: typeof items[number]) {
+    if (!n.read) await supabase.from("notifications").update({ read: true }).eq("id", n.id);
+    setOpen(false);
+    if (n.link) navigate({ to: n.link as any });
+  }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative h-12 w-12 md:h-10 md:w-10">
           <Bell className="h-5 w-5 md:h-4 md:w-4" />
@@ -172,13 +179,17 @@ function NotificationsBell() {
           {items.length === 0 ? (
             <div className="p-6 text-sm text-muted-foreground text-center">Geen meldingen</div>
           ) : items.map(n => (
-            <div key={n.id} className={`p-3 border-b text-sm ${n.read ? "" : "bg-gradient-brand-soft"}`}>
+            <button
+              key={n.id}
+              onClick={() => openItem(n)}
+              className={`w-full text-left p-3 border-b text-sm hover:bg-muted/50 transition-colors ${n.read ? "" : "bg-gradient-brand-soft"}`}
+            >
               <div className="font-medium">{n.title}</div>
               {n.body && <div className="text-muted-foreground text-xs mt-0.5">{n.body}</div>}
               <div className="text-[10px] text-muted-foreground mt-1">
                 {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: nl })}
               </div>
-            </div>
+            </button>
           ))}
         </ScrollArea>
       </PopoverContent>

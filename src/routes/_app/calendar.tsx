@@ -22,15 +22,8 @@ export const Route = createFileRoute("/_app/calendar")({
   validateSearch: (s: Record<string, unknown>) => ({ appt: typeof s.appt === "string" ? s.appt : undefined }),
 });
 
-const APPT_TYPES = [
-  { key: "client_meeting", label: "Meeting met klant", color: "#3b82f6" },
-  { key: "internal",       label: "Intern overleg",   color: "#8b5cf6" },
-  { key: "deadline",       label: "Deadline",          color: "#10b981" },
-  { key: "followup",       label: "Follow-up",         color: "#eab308" },
-] as const;
-const TYPE_COLOR: Record<string,string> = Object.fromEntries(APPT_TYPES.map(t => [t.key, t.color]));
+type ApptType = { id: string; key: string; label: string; color: string; sort_order: number };
 const TASK_COLOR = "#f97316";
-const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
 
 function CalendarPage() {
   const { user } = useAuth();
@@ -41,20 +34,26 @@ function CalendarPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [types, setTypes] = useState<ApptType[]>([]);
   const [view, setView] = useState<"month"|"week"|"day">("week");
   const [cursor, setCursor] = useState(new Date());
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
 
+  const TYPE_COLOR = useMemo(() => Object.fromEntries(types.map(t => [t.key, t.color])), [types]);
+  const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
+
   async function load() {
-    const [{ data: a }, { data: c }, { data: pr }, { data: pf }, { data: ts }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: pr }, { data: pf }, { data: ts }, { data: tp }] = await Promise.all([
       supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
       supabase.from("profiles").select("id, full_name").order("full_name"),
       supabase.from("tasks").select("id,title,deadline,status,assignee_id,assignee_ids").not("deadline","is",null),
+      supabase.from("appointment_types").select("*").order("sort_order"),
     ]);
     setAppts(a ?? []); setCustomers(c ?? []); setProjects(pr ?? []); setProfiles(pf ?? []); setTasks(ts ?? []);
+    setTypes((tp ?? []) as ApptType[]);
   }
   useEffect(() => {
     load();
@@ -110,13 +109,13 @@ function CalendarPage() {
         </div>
         <Dialog open={open} onOpenChange={(o)=>{setOpen(o); if(!o)setEditing(null);}}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button></DialogTrigger>
-          <ApptDialog key={editing?.id ?? "new"} appt={editing} customers={customers} projects={projects} profiles={profiles} userId={user?.id ?? null} isAdmin={isAdmin} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null); load();}} />
+          <ApptDialog key={editing?.id ?? "new"} appt={editing} customers={customers} projects={projects} profiles={profiles} userId={user?.id ?? null} isAdmin={isAdmin} types={types} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null); load();}} />
         </Dialog>
       </div>
 
       <Card className="p-3 flex flex-wrap gap-x-4 gap-y-2 items-center text-xs">
         <span className="font-medium text-muted-foreground">Legenda:</span>
-        {APPT_TYPES.map(t => (
+        {types.map(t => (
           <span key={t.key} className="inline-flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
             {t.label}
@@ -205,19 +204,21 @@ function CalendarPage() {
   );
 }
 
-function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, defaultDate, onClose }: any) {
+function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, types, defaultDate, onClose }: any) {
+  const TYPE_COLOR: Record<string,string> = Object.fromEntries((types ?? []).map((t: ApptType) => [t.key, t.color]));
+  const defaultType = (types && types[0]?.key) ?? "client_meeting";
   const init = appt ? {
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
-    appointment_type: appt.appointment_type ?? "client_meeting",
+    appointment_type: appt.appointment_type ?? defaultType,
     customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
     participants: appt.participants ?? [],
   } : {
     title: "", description: "",
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
-    appointment_type: "client_meeting",
+    appointment_type: defaultType,
     customer_id: "", project_id: "",
     participants: userId ? [userId] : [],
   };
@@ -292,7 +293,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, defa
           <Select value={form.appointment_type} onValueChange={v=>setForm({...form, appointment_type: v})}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {APPT_TYPES.map(t => (
+              {(types ?? []).map((t: ApptType) => (
                 <SelectItem key={t.key} value={t.key}>
                   <span className="inline-flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />

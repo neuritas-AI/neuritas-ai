@@ -8,7 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon } from "lucide-react";
 import { fmtDate, fmtDateTime, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
-import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
+import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, PROJECT_STATUS_REQUIRES_REASON } from "@/lib/billing-format";
+import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { ProjectDialog } from "./index";
@@ -76,7 +77,10 @@ function ProjectDetail() {
                 </Link>
               )}
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <Badge variant="outline" className={projectStatusColor[project.status]}>{projectStatusLabel[project.status]}</Badge>
+                <ProjectStatusSelect project={project} onChanged={load} />
+                {project.status_reason && PROJECT_STATUS_REQUIRES_REASON.has(project.status) && (
+                  <span className="text-xs text-muted-foreground italic">"{project.status_reason}"</span>
+                )}
                 {assignedNames && <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><UsersIcon className="h-3 w-3" /> {assignedNames}</span>}
               </div>
               {project.description && <p className="text-sm text-muted-foreground mt-3 max-w-2xl">{project.description}</p>}

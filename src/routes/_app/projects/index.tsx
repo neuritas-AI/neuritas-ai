@@ -13,7 +13,7 @@ import { Plus, ChevronRight, FolderKanban } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { customerLabel } from "@/lib/customer-label";
-import { PROJECT_STATUSES, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
+import { PROJECT_STATUSES, PROJECT_STATUS_REQUIRES_REASON, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
 
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
 

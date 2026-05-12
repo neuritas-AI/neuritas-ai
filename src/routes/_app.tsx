@@ -72,6 +72,7 @@ function AppLayout() {
               <item.icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.to === "/chat" && <ChatUnreadBadge active={active} />}
+              {item.to === "/notifications" && <NotifUnreadBadge />}
             </Link>
           );
         })}

@@ -226,3 +226,25 @@ function ChatUnreadBadge({ active }: { active: boolean }) {
   if (count === 0) return null;
   return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-gradient-brand border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
 }
+
+function NotifUnreadBadge() {
+  const { user } = useAuth();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    const refresh = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("read", false);
+      setCount(count ?? 0);
+    };
+    refresh();
+    const ch = supabase.channel(`notif-side-${user.id}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, refresh)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+  if (count === 0) return null;
+  return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-red-500 border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
+}

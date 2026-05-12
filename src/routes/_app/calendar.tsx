@@ -34,20 +34,26 @@ function CalendarPage() {
   const [customers, setCustomers] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [types, setTypes] = useState<ApptType[]>([]);
   const [view, setView] = useState<"month"|"week"|"day">("week");
   const [cursor, setCursor] = useState(new Date());
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
 
+  const TYPE_COLOR = useMemo(() => Object.fromEntries(types.map(t => [t.key, t.color])), [types]);
+  const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
+
   async function load() {
-    const [{ data: a }, { data: c }, { data: pr }, { data: pf }, { data: ts }] = await Promise.all([
+    const [{ data: a }, { data: c }, { data: pr }, { data: pf }, { data: ts }, { data: tp }] = await Promise.all([
       supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
       supabase.from("profiles").select("id, full_name").order("full_name"),
       supabase.from("tasks").select("id,title,deadline,status,assignee_id,assignee_ids").not("deadline","is",null),
+      supabase.from("appointment_types").select("*").order("sort_order"),
     ]);
     setAppts(a ?? []); setCustomers(c ?? []); setProjects(pr ?? []); setProfiles(pf ?? []); setTasks(ts ?? []);
+    setTypes((tp ?? []) as ApptType[]);
   }
   useEffect(() => {
     load();

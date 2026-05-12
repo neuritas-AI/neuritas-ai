@@ -19,18 +19,26 @@ type Meeting = {
   discussed: string | null;
   problem: string | null;
   solution: string | null;
+  appointment_id: string | null;
   created_by: string | null;
   created_at: string;
 };
 
+type Appt = { id: string; title: string; start_at: string };
+
 export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }> }) {
   const [items, setItems] = useState<Meeting[]>([]);
+  const [appts, setAppts] = useState<Appt[]>([]);
   const [open, setOpen] = useState<Meeting | null | false>(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("project_meetings").select("*").eq("project_id", projectId).order("meeting_date", { ascending: false }).order("created_at", { ascending: false });
+    const [{ data }, { data: ap }] = await Promise.all([
+      supabase.from("project_meetings").select("*").eq("project_id", projectId).order("meeting_date", { ascending: false }).order("created_at", { ascending: false }),
+      supabase.from("appointments").select("id, title, start_at").eq("project_id", projectId).order("start_at", { ascending: false }),
+    ]);
     setItems((data ?? []) as Meeting[]);
+    setAppts((ap ?? []) as Appt[]);
   }
   useEffect(() => { load(); }, [projectId]);
 

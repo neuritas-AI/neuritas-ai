@@ -72,7 +72,7 @@ function ProjectDetail() {
               <h1 className="text-3xl font-display font-semibold">{project.name}</h1>
               {customer && (
                 <Link to="/customers/$id" params={{ id: customer.id }} className="text-sm text-primary hover:underline mt-1 inline-block">
-                  {customer.name}
+                  {customer.company || customer.name}
                 </Link>
               )}
               <div className="flex flex-wrap items-center gap-2 mt-3">

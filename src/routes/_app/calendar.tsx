@@ -18,7 +18,14 @@ import { customerLabel } from "@/lib/customer-label";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
 
-const COLORS = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899"];
+const APPT_TYPES = [
+  { key: "client_meeting", label: "Meeting met klant", color: "#3b82f6" },
+  { key: "internal",       label: "Intern overleg",   color: "#8b5cf6" },
+  { key: "deadline",       label: "Deadline",          color: "#10b981" },
+  { key: "followup",       label: "Follow-up",         color: "#eab308" },
+] as const;
+const TYPE_COLOR: Record<string,string> = Object.fromEntries(APPT_TYPES.map(t => [t.key, t.color]));
+const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
 
 function CalendarPage() {
   const { user } = useAuth();

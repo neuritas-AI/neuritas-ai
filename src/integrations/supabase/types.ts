@@ -65,6 +65,33 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_types: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          key: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       appointments: {
         Row: {
           appointment_type: string
@@ -229,9 +256,11 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
+          invoice_id: string | null
           mime_type: string | null
           name: string
           project_id: string | null
+          quote_id: string | null
           size: number | null
           storage_path: string
           task_id: string | null
@@ -242,9 +271,11 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          invoice_id?: string | null
           mime_type?: string | null
           name: string
           project_id?: string | null
+          quote_id?: string | null
           size?: number | null
           storage_path: string
           task_id?: string | null
@@ -255,9 +286,11 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
+          invoice_id?: string | null
           mime_type?: string | null
           name?: string
           project_id?: string | null
+          quote_id?: string | null
           size?: number | null
           storage_path?: string
           task_id?: string | null
@@ -460,6 +493,7 @@ export type Database = {
           id: string
           name: string
           status: Database["public"]["Enums"]["project_status"]
+          status_reason: string | null
           updated_at: string
         }
         Insert: {
@@ -471,6 +505,7 @@ export type Database = {
           id?: string
           name: string
           status?: Database["public"]["Enums"]["project_status"]
+          status_reason?: string | null
           updated_at?: string
         }
         Update: {
@@ -482,6 +517,7 @@ export type Database = {
           id?: string
           name?: string
           status?: Database["public"]["Enums"]["project_status"]
+          status_reason?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -718,7 +754,7 @@ export type Database = {
       app_role: "admin" | "employee"
       customer_status: "lead" | "active" | "completed" | "follow_up"
       invoice_status: "to_send" | "sent" | "paid" | "overdue"
-      project_status: "planned" | "active" | "on_hold" | "completed"
+      project_status: "planned" | "active" | "on_hold" | "completed" | "lost"
       quote_status: "draft" | "sent" | "approved" | "rejected"
       task_priority: "low" | "normal" | "high"
       task_status: "todo" | "in_progress" | "done"
@@ -852,7 +888,7 @@ export const Constants = {
       app_role: ["admin", "employee"],
       customer_status: ["lead", "active", "completed", "follow_up"],
       invoice_status: ["to_send", "sent", "paid", "overdue"],
-      project_status: ["planned", "active", "on_hold", "completed"],
+      project_status: ["planned", "active", "on_hold", "completed", "lost"],
       quote_status: ["draft", "sent", "approved", "rejected"],
       task_priority: ["low", "normal", "high"],
       task_status: ["todo", "in_progress", "done"],

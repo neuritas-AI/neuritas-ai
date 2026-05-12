@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { usePermissions } from "@/lib/permissions";
@@ -28,6 +28,7 @@ const baseNav = [
   { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
   { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
   { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null },
+  { to: "/notifications", label: "Meldingen", icon: Inbox, perm: null },
   { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
 ] as const;
 
@@ -71,6 +72,7 @@ function AppLayout() {
               <item.icon className="h-4 w-4" />
               <span className="flex-1">{item.label}</span>
               {item.to === "/chat" && <ChatUnreadBadge active={active} />}
+              {item.to === "/notifications" && <NotifUnreadBadge />}
             </Link>
           );
         })}
@@ -223,4 +225,26 @@ function ChatUnreadBadge({ active }: { active: boolean }) {
 
   if (count === 0) return null;
   return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-gradient-brand border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
+}
+
+function NotifUnreadBadge() {
+  const { user } = useAuth();
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    const refresh = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("read", false);
+      setCount(count ?? 0);
+    };
+    refresh();
+    const ch = supabase.channel(`notif-side-${user.id}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, refresh)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user]);
+  if (count === 0) return null;
+  return <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-red-500 border-0 text-white">{count > 99 ? "99+" : count}</Badge>;
 }

@@ -32,8 +32,8 @@ function CalendarPage() {
 
   async function load() {
     const [{ data: a }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("appointments").select("*, customers(name)").order("start_at"),
-      supabase.from("customers").select("id,name").order("name"),
+      supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
     ]);
     setAppts(a ?? []); setCustomers(c ?? []); setProjects(pr ?? []);

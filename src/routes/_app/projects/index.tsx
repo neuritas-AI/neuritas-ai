@@ -82,7 +82,7 @@ function ProjectsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-display font-semibold truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{p.customers?.name ?? "—"}</div>
+                  <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
                   {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

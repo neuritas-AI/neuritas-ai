@@ -129,7 +129,7 @@ function CalendarPage() {
                       <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: a.color }}>
                         <div className="font-medium">{a.title}</div>
                         <div>{fmtTime(a.start_at)} – {fmtTime(a.end_at)}</div>
-                        {a.customers?.name && <div className="opacity-80">{a.customers.name}</div>}
+                        {a.customers && <div className="opacity-80">{customerLabel(a.customers)}</div>}
                       </button>
                     ))}
                   </div>

@@ -182,7 +182,9 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
       title: form.title, description: form.description || null,
       start_at: new Date(form.start_at).toISOString(),
       end_at: new Date(form.end_at).toISOString(),
-      color: form.color, customer_id: form.customer_id || null,
+      appointment_type: form.appointment_type,
+      color: TYPE_COLOR[form.appointment_type] ?? "#3b82f6",
+      customer_id: form.customer_id || null,
       project_id: form.project_id || null,
       ...(appt ? {} : { created_by: userId, participants: userId ? [userId] : [] }),
     };

@@ -39,8 +39,8 @@ function TasksPage() {
   const [projects, setProjects] = useState<any[]>([]);
   async function load() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name), projects(name)").order("created_at", { ascending: false }),
-      supabase.from("customers").select("id, name").order("name"),
+      supabase.from("tasks").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }),
+      supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);

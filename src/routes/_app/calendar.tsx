@@ -18,7 +18,14 @@ import { customerLabel } from "@/lib/customer-label";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
 
-const COLORS = ["#3b82f6","#10b981","#f59e0b","#ef4444","#8b5cf6","#ec4899"];
+const APPT_TYPES = [
+  { key: "client_meeting", label: "Meeting met klant", color: "#3b82f6" },
+  { key: "internal",       label: "Intern overleg",   color: "#8b5cf6" },
+  { key: "deadline",       label: "Deadline",          color: "#10b981" },
+  { key: "followup",       label: "Follow-up",         color: "#eab308" },
+] as const;
+const TYPE_COLOR: Record<string,string> = Object.fromEntries(APPT_TYPES.map(t => [t.key, t.color]));
+const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
 
 function CalendarPage() {
   const { user } = useAuth();
@@ -71,9 +78,19 @@ function CalendarPage() {
         </div>
         <Dialog open={open} onOpenChange={(o)=>{setOpen(o); if(!o)setEditing(null);}}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button></DialogTrigger>
-          <ApptDialog appt={editing} customers={customers} projects={projects} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
+          <ApptDialog key={editing?.id ?? "new"} appt={editing} customers={customers} projects={projects} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
         </Dialog>
       </div>
+
+      <Card className="p-3 flex flex-wrap gap-x-4 gap-y-2 items-center text-xs">
+        <span className="font-medium text-muted-foreground">Legenda:</span>
+        {APPT_TYPES.map(t => (
+          <span key={t.key} className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+            {t.label}
+          </span>
+        ))}
+      </Card>
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
@@ -104,7 +121,7 @@ function CalendarPage() {
                   <div className="text-xs font-medium mb-1">{format(d, "d")}</div>
                   <div className="space-y-0.5">
                     {dayAppts.slice(0,3).map(a => (
-                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left text-[10px] p-1 rounded truncate text-white" style={{ background: a.color }}>
+                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left text-[10px] p-1 rounded truncate text-white" style={{ background: colorFor(a) }}>
                         {fmtTime(a.start_at)} {a.title}
                       </button>
                     ))}
@@ -126,7 +143,7 @@ function CalendarPage() {
                   <div className="space-y-2">
                     {dayAppts.length === 0 && <p className="text-xs text-muted-foreground">Geen afspraken</p>}
                     {dayAppts.map(a => (
-                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: a.color }}>
+                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: colorFor(a) }}>
                         <div className="font-medium">{a.title}</div>
                         <div>{fmtTime(a.start_at)} – {fmtTime(a.end_at)}</div>
                         {a.customers && <div className="opacity-80">{customerLabel(a.customers)}</div>}
@@ -148,12 +165,14 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
-    color: appt.color, customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
+    appointment_type: appt.appointment_type ?? "client_meeting",
+    customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
   } : {
     title: "", description: "",
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
-    color: COLORS[0], customer_id: "", project_id: "",
+    appointment_type: "client_meeting",
+    customer_id: "", project_id: "",
   };
   const [form, setForm] = useState(init);
 
@@ -163,7 +182,9 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
       title: form.title, description: form.description || null,
       start_at: new Date(form.start_at).toISOString(),
       end_at: new Date(form.end_at).toISOString(),
-      color: form.color, customer_id: form.customer_id || null,
+      appointment_type: form.appointment_type,
+      color: TYPE_COLOR[form.appointment_type] ?? "#3b82f6",
+      customer_id: form.customer_id || null,
       project_id: form.project_id || null,
       ...(appt ? {} : { created_by: userId, participants: userId ? [userId] : [] }),
     };
@@ -209,12 +230,20 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
             </Select>
           </div>
         </div>
-        <div><Label>Kleur</Label>
-          <div className="flex gap-2 mt-1">
-            {COLORS.map(c => (
-              <button key={c} type="button" onClick={()=>setForm({...form,color:c})} className={`h-7 w-7 rounded-full ${form.color===c?"ring-2 ring-offset-2 ring-foreground":""}`} style={{ background: c }} />
-            ))}
-          </div>
+        <div><Label>Type afspraak</Label>
+          <Select value={form.appointment_type} onValueChange={v=>setForm({...form, appointment_type: v})}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {APPT_TYPES.map(t => (
+                <SelectItem key={t.key} value={t.key}>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+                    {t.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter className="gap-2">

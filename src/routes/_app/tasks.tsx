@@ -91,7 +91,7 @@ function TasksPage() {
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
-          <TaskDialog task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
+          <TaskDialog key={editing?.id ?? "new"} task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
         </Dialog>
       </div>
 

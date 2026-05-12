@@ -46,6 +46,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          appointment_type: string
           color: string
           created_at: string
           created_by: string | null
@@ -60,6 +61,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appointment_type?: string
           color?: string
           created_at?: string
           created_by?: string | null
@@ -74,6 +76,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appointment_type?: string
           color?: string
           created_at?: string
           created_by?: string | null

@@ -75,25 +75,28 @@ function ProjectsPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen projecten</Card>}
         {filtered.map(p => (
-          <Link key={p.id} to="/projects/$id" params={{ id: p.id }} className="group">
-            <Card className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full">
-              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="flex items-start gap-3">
-                <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center shrink-0">
-                  <FolderKanban className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-display font-semibold truncate">{p.name}</div>
-                  <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
-                  {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Card key={p.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full group">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Link to="/projects/$id" params={{ id: p.id }} className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center shrink-0">
+                <FolderKanban className="h-5 w-5" />
               </div>
-              <div className="flex items-center justify-between mt-4">
-                <Badge variant="outline" className={projectStatusColor[p.status]}>{projectStatusLabel[p.status]}</Badge>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-semibold truncate">{p.name}</div>
+                <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
+                {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
               </div>
-            </Card>
-          </Link>
+              <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </Link>
+            <div className="flex items-start justify-between gap-2 mt-4">
+              <ProjectStatusSelect project={p} onChanged={load} />
+              {p.status_reason && (PROJECT_STATUS_REQUIRES_REASON_CLIENT.has(p.status)) && (
+                <span className="text-[11px] text-muted-foreground italic line-clamp-2 flex-1 text-right" title={p.status_reason}>
+                  "{p.status_reason}"
+                </span>
+              )}
+            </div>
+          </Card>
         ))}
       </div>
     </div>

@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog } from "@/components/ui/dialog";
 import { Plus, Receipt, FileSignature } from "lucide-react";
 import { fmtDate } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/permissions";

@@ -298,11 +298,19 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Toegewezen aan</Label>
-          <Select value={form.assignee_id || "none"} onValueChange={v=>setForm({...form,assignee_id: v==="none"?"":v})}>
-            <SelectTrigger><SelectValue placeholder="Niemand" /></SelectTrigger>
-            <SelectContent><SelectItem value="none">Niemand</SelectItem>{profiles.map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.full_name ?? p.id.slice(0,6)}</SelectItem>)}</SelectContent>
-          </Select>
+        <div><Label>Toegewezen aan ({form.assignee_ids.length})</Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {profiles.map((p: any) => {
+              const active = form.assignee_ids.includes(p.id);
+              return (
+                <button key={p.id} type="button" onClick={()=>toggleAssignee(p.id)}
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-all ${active ? "bg-gradient-brand text-white border-transparent shadow-brand" : "border-border hover:border-primary/40"}`}>
+                  {p.full_name ?? p.id.slice(0,6)}
+                </button>
+              );
+            })}
+            {profiles.length === 0 && <span className="text-xs text-muted-foreground">Geen teamleden</span>}
+          </div>
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
       </div>

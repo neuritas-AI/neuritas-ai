@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
+import { TaskUpdates } from "@/components/TaskUpdates";
+import { Hand } from "lucide-react";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
 

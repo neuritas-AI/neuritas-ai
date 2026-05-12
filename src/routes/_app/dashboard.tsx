@@ -90,7 +90,7 @@ function Dashboard() {
               <Link key={t.id} to="/tasks" className="flex items-center justify-between p-2.5 rounded-lg bg-card hover:shadow-soft transition-all">
                 <div>
                   <div className="font-medium text-sm">{t.title}</div>
-                  <div className="text-xs text-muted-foreground">{t.customers?.name && `${t.customers.name} · `}{fmtDate(t.deadline)}</div>
+                  <div className="text-xs text-muted-foreground">{t.customers && `${customerLabel(t.customers)} · `}{fmtDate(t.deadline)}</div>
                 </div>
                 <Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge>
               </Link>

@@ -108,6 +108,7 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
     name: project?.name ?? "",
     customer_id: project?.customer_id ?? defaultCustomerId ?? "",
     status: project?.status ?? "planned",
+    status_reason: project?.status_reason ?? "",
     description: project?.description ?? "",
     assigned_to: project?.assigned_to ?? (userId ? [userId] : []),
   });
@@ -117,7 +118,10 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
   async function save() {
     if (!form.name.trim()) return toast.error("Naam verplicht");
     if (!form.customer_id) return toast.error("Klant verplicht");
-    const payload = { ...form, ...(project ? {} : { created_by: userId }) };
+    const requiresReason = PROJECT_STATUS_REQUIRES_REASON.has(form.status);
+    if (requiresReason && !form.status_reason.trim()) return toast.error("Reden verplicht voor deze status");
+    const cleaned = { ...form, status_reason: requiresReason ? form.status_reason.trim() : null };
+    const payload = { ...cleaned, ...(project ? {} : { created_by: userId }) };
     const { error } = project
       ? await supabase.from("projects").update(payload).eq("id", project.id)
       : await supabase.from("projects").insert(payload as any);

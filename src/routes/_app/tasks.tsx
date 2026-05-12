@@ -55,7 +55,10 @@ function TasksPage() {
   const viewFiltered = useMemo(() => {
     const today = new Date();
     return tasks.filter(t => {
-      if (view === "mine") return t.assignee_id === user?.id;
+      if (view === "mine") {
+        const ids = (t.assignee_ids ?? []) as string[];
+        return user ? (ids.includes(user.id) || t.assignee_id === user.id) : false;
+      }
       if (view === "today") return t.deadline && isSameDay(new Date(t.deadline), today);
       if (view === "week") return t.deadline && isWithinInterval(new Date(t.deadline), { start: startOfWeek(today, { weekStartsOn: 1 }), end: endOfWeek(today, { weekStartsOn: 1 }) });
       return true;

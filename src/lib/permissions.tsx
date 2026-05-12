@@ -68,10 +68,10 @@ const ALL_FALSE: Permissions = {
   can_manage_customers: false, can_manage_projects: false, can_manage_tasks: true,
 };
 
-export function usePermissions(): { perms: Permissions; loading: boolean } {
+export function usePermissions(): { perms: Permissions; loading: boolean; isAdmin: boolean } {
   const { user } = useAuth();
   const { isAdmin, loading: roleLoading } = useRole();
-  const [perms, setPerms] = useState<Permissions>(ALL_FALSE);
+  const [perms, setPerms] = useState<Permissions>(ALL_TRUE);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,5 +83,6 @@ export function usePermissions(): { perms: Permissions; loading: boolean } {
     });
   }, [user, isAdmin, roleLoading]);
 
-  return { perms, loading };
+  // Admins always have full access — bypass any stored permission toggles
+  return { perms: isAdmin ? ALL_TRUE : perms, loading, isAdmin };
 }

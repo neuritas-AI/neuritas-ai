@@ -35,9 +35,10 @@ function AppLayout() {
   const { user, loading, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const { role } = useRole();
-  const { perms } = usePermissions();
+  const { perms, isAdmin } = usePermissions();
   const path = useRouterState({ select: s => s.location.pathname });
   const nav = baseNav.filter(n => {
+    if (isAdmin) return true; // admins always see everything
     if (n.perm === "billing") return perms.can_view_quotes || perms.can_edit_quotes || perms.can_view_invoices || perms.can_edit_invoices;
     if (n.perm === "customers") return perms.can_view_customers;
     if (n.perm === "projects") return perms.can_view_projects;

@@ -83,6 +83,13 @@ function TasksPage() {
     const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
   }
+  async function claimWorker(id: string, currentWorker: string | null) {
+    if (!user) return;
+    const next = currentWorker === user.id ? null : user.id;
+    const { error } = await supabase.from("tasks").update({ current_worker_id: next }).eq("id", id);
+    if (error) toast.error(error.message);
+    else toast.success(next ? "Je bent nu bezig met deze taak" : "Niet meer bezig");
+  }
 
   return (
     <div className="space-y-6">
@@ -166,6 +173,22 @@ function TasksPage() {
                           ))}
                         </div>
                       )}
+                      {(() => {
+                        const worker = t.current_worker_id ? profiles.find(p => p.id === t.current_worker_id) : null;
+                        const mine = user && t.current_worker_id === user.id;
+                        return (
+                          <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
+                            {worker ? (
+                              <span className="text-[10px] inline-flex items-center gap-1 text-success">
+                                <Hand className="h-3 w-3" /> Bezig: {worker.full_name ?? "—"}
+                              </span>
+                            ) : <span />}
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => claimWorker(t.id, t.current_worker_id)}>
+                              {mine ? "Stop" : "Ik ben bezig"}
+                            </Button>
+                          </div>
+                        );
+                      })()}
                       <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                         {STATUSES.filter(x => x !== s).map(x => (
                           <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>

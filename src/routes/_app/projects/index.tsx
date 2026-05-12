@@ -127,7 +127,7 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
             <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Status</Label>

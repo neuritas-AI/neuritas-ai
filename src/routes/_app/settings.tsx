@@ -195,9 +195,13 @@ function ApptTypesManager() {
     <div className="space-y-3">
       <div className="space-y-2">
         {items.map(t => (
-          <div key={t.id} className="flex items-center gap-2 border rounded-lg p-2">
+          <div key={t.id} className="flex items-center gap-2 border rounded-lg p-2 flex-wrap">
             <Input type="color" value={t.color} onChange={e => update(t.id, { color: e.target.value })} className="w-12 h-9 p-1 cursor-pointer" />
-            <Input value={t.label} onChange={e => update(t.id, { label: e.target.value })} className="flex-1" />
+            <Input value={t.label} onChange={e => update(t.id, { label: e.target.value })} className="flex-1 min-w-32" />
+            <label className="text-xs flex items-center gap-1.5 px-2 cursor-pointer" title="Aanwezigheid bijhouden voor dit type">
+              <input type="checkbox" checked={!!t.requires_attendance} onChange={e => update(t.id, { requires_attendance: e.target.checked })} />
+              Aanwezigheid
+            </label>
             <Button variant="ghost" size="icon" onClick={() => del(t.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
           </div>
         ))}

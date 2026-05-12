@@ -72,6 +72,7 @@ export type Database = {
           id: string
           key: string
           label: string
+          requires_attendance: boolean
           sort_order: number
         }
         Insert: {
@@ -80,6 +81,7 @@ export type Database = {
           id?: string
           key: string
           label: string
+          requires_attendance?: boolean
           sort_order?: number
         }
         Update: {
@@ -88,6 +90,7 @@ export type Database = {
           id?: string
           key?: string
           label?: string
+          requires_attendance?: boolean
           sort_order?: number
         }
         Relationships: []
@@ -587,12 +590,45 @@ export type Database = {
           },
         ]
       }
+      task_updates: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_updates_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
           assignee_ids: string[]
           created_at: string
           created_by: string | null
+          current_worker_id: string | null
           customer_id: string | null
           deadline: string | null
           description: string | null
@@ -609,6 +645,7 @@ export type Database = {
           assignee_ids?: string[]
           created_at?: string
           created_by?: string | null
+          current_worker_id?: string | null
           customer_id?: string | null
           deadline?: string | null
           description?: string | null
@@ -625,6 +662,7 @@ export type Database = {
           assignee_ids?: string[]
           created_at?: string
           created_by?: string | null
+          current_worker_id?: string | null
           customer_id?: string | null
           deadline?: string | null
           description?: string | null

@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
+import { TaskUpdates } from "@/components/TaskUpdates";
+import { Hand } from "lucide-react";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
 
@@ -80,6 +82,13 @@ function TasksPage() {
   async function updateStatus(id: string, status: "todo"|"in_progress"|"done") {
     const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
+  }
+  async function claimWorker(id: string, currentWorker: string | null) {
+    if (!user) return;
+    const next = currentWorker === user.id ? null : user.id;
+    const { error } = await supabase.from("tasks").update({ current_worker_id: next }).eq("id", id);
+    if (error) toast.error(error.message);
+    else toast.success(next ? "Je bent nu bezig met deze taak" : "Niet meer bezig");
   }
 
   return (
@@ -164,6 +173,22 @@ function TasksPage() {
                           ))}
                         </div>
                       )}
+                      {(() => {
+                        const worker = t.current_worker_id ? profiles.find(p => p.id === t.current_worker_id) : null;
+                        const mine = user && t.current_worker_id === user.id;
+                        return (
+                          <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
+                            {worker ? (
+                              <span className="text-[10px] inline-flex items-center gap-1 text-success">
+                                <Hand className="h-3 w-3" /> Bezig: {worker.full_name ?? "—"}
+                              </span>
+                            ) : <span />}
+                            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => claimWorker(t.id, t.current_worker_id)}>
+                              {mine ? "Stop" : "Ik ben bezig"}
+                            </Button>
+                          </div>
+                        );
+                      })()}
                       <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                         {STATUSES.filter(x => x !== s).map(x => (
                           <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
@@ -258,7 +283,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
   }
 
   return (
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{task ? "Taak bewerken" : "Nieuwe taak"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>Titel *</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
@@ -313,6 +338,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
           </div>
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
+        {task && <TaskUpdates taskId={task.id} profiles={profiles} />}
       </div>
       <DialogFooter className="gap-2">
         {task && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

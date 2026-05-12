@@ -71,6 +71,7 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
               projectId={projectId}
               userId={userId}
               profiles={profiles}
+              appts={appts}
               onClose={() => { setOpen(false); load(); }}
             />
           )}

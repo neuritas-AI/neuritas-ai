@@ -193,6 +193,7 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
         </div>
         <div><Label>Datum</Label><Input type="date" value={form.issue_date} onChange={e=>setForm({...form,issue_date:e.target.value})} /></div>
         <div><Label>Notities</Label><Textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} /></div>
+        {quote?.id && <BillingFiles kind="quote" parentId={quote.id} customerId={form.customer_id} userId={userId} />}
       </div>
       <DialogFooter className="gap-2">
         {quote && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

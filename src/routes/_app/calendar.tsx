@@ -121,7 +121,7 @@ function CalendarPage() {
                   <div className="text-xs font-medium mb-1">{format(d, "d")}</div>
                   <div className="space-y-0.5">
                     {dayAppts.slice(0,3).map(a => (
-                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left text-[10px] p-1 rounded truncate text-white" style={{ background: a.color }}>
+                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left text-[10px] p-1 rounded truncate text-white" style={{ background: colorFor(a) }}>
                         {fmtTime(a.start_at)} {a.title}
                       </button>
                     ))}

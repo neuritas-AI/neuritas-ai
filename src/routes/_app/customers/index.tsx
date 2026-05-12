@@ -117,8 +117,8 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
     setForm(f => ({ ...f, assigned_to: f.assigned_to.includes(uid) ? f.assigned_to.filter((x: string)=>x!==uid) : [...f.assigned_to, uid] }));
   }
   async function save() {
-    if (!form.name.trim()) return toast.error("Naam verplicht");
-    const payload = { ...form, ...(customer ? {} : { created_by: userId }) };
+    if (!form.company.trim()) return toast.error("Bedrijfsnaam verplicht");
+    const payload = { ...form, name: form.name.trim() || null, ...(customer ? {} : { created_by: userId }) };
     const { error } = customer
       ? await supabase.from("customers").update(payload).eq("id", customer.id)
       : await supabase.from("customers").insert(payload as any);
@@ -129,8 +129,8 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{customer?"Klant bewerken":"Nieuwe klant"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
-        <div><Label>Bedrijf</Label><Input value={form.company} onChange={e=>setForm({...form,company:e.target.value})} /></div>
+        <div><Label>Bedrijfsnaam *</Label><Input value={form.company} onChange={e=>setForm({...form,company:e.target.value})} placeholder="Acme BV" /></div>
+        <div><Label>Contactpersoon</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Optioneel" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} /></div>
           <div><Label>Telefoon</Label><Input value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} /></div>

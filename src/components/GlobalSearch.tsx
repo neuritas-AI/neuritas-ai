@@ -57,8 +57,8 @@ export function GlobalSearch() {
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-2 text-muted-foreground">
-        <Search className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Zoeken…</span>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="gap-2 text-muted-foreground h-12 sm:h-9 px-3">
+        <Search className="h-5 w-5 sm:h-3.5 sm:w-3.5" /> <span className="hidden sm:inline">Zoeken…</span>
         <kbd className="hidden md:inline ml-2 text-[10px] bg-muted rounded px-1.5 py-0.5">⌘K</kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>

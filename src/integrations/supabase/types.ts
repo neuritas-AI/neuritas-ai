@@ -384,6 +384,45 @@ export type Database = {
         }
         Relationships: []
       }
+      project_meetings: {
+        Row: {
+          conducted_by: string | null
+          created_at: string
+          created_by: string | null
+          discussed: string | null
+          id: string
+          meeting_date: string
+          problem: string | null
+          project_id: string
+          solution: string | null
+          updated_at: string
+        }
+        Insert: {
+          conducted_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          discussed?: string | null
+          id?: string
+          meeting_date?: string
+          problem?: string | null
+          project_id: string
+          solution?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conducted_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          discussed?: string | null
+          id?: string
+          meeting_date?: string
+          problem?: string | null
+          project_id?: string
+          solution?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       projects: {
         Row: {
           assigned_to: string[]

@@ -338,6 +338,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
           </div>
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
+        {task && <TaskUpdates taskId={task.id} profiles={profiles} />}
       </div>
       <DialogFooter className="gap-2">
         {task && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

@@ -105,6 +105,7 @@ function AppLayout() {
       </aside>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="p-0 w-72 bg-sidebar text-sidebar-foreground flex flex-col">
+          <VisuallyHidden><SheetTitle>Navigatie menu</SheetTitle></VisuallyHidden>
           {sidebarBody}
         </SheetContent>
       </Sheet>

@@ -22,15 +22,8 @@ export const Route = createFileRoute("/_app/calendar")({
   validateSearch: (s: Record<string, unknown>) => ({ appt: typeof s.appt === "string" ? s.appt : undefined }),
 });
 
-const APPT_TYPES = [
-  { key: "client_meeting", label: "Meeting met klant", color: "#3b82f6" },
-  { key: "internal",       label: "Intern overleg",   color: "#8b5cf6" },
-  { key: "deadline",       label: "Deadline",          color: "#10b981" },
-  { key: "followup",       label: "Follow-up",         color: "#eab308" },
-] as const;
-const TYPE_COLOR: Record<string,string> = Object.fromEntries(APPT_TYPES.map(t => [t.key, t.color]));
+type ApptType = { id: string; key: string; label: string; color: string; sort_order: number };
 const TASK_COLOR = "#f97316";
-const colorFor = (a: any) => TYPE_COLOR[a?.appointment_type] ?? a?.color ?? "#3b82f6";
 
 function CalendarPage() {
   const { user } = useAuth();

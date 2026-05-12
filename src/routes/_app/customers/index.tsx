@@ -86,11 +86,11 @@ function CustomersPage() {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-start gap-3">
                 <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center font-semibold shrink-0">
-                  {c.name.slice(0,2).toUpperCase()}
+                  {customerLabel(c).slice(0,2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display font-semibold truncate">{c.name}</div>
-                  {c.company && <div className="text-xs text-muted-foreground flex items-center gap-1 truncate"><Building2 className="h-3 w-3" />{c.company}</div>}
+                  <div className="font-display font-semibold truncate flex items-center gap-1"><Building2 className="h-4 w-4 text-muted-foreground shrink-0" />{customerLabel(c)}</div>
+                  {c.name && c.name !== c.company && <div className="text-xs text-muted-foreground truncate">{c.name}</div>}
                   <div className="text-xs text-muted-foreground mt-1 truncate">{c.email ?? c.phone ?? ""}</div>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

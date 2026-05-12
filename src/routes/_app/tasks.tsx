@@ -196,7 +196,7 @@ function TasksPage() {
                     <td className="p-3"><Badge className={statusColor[t.status]}>{statusLabel[t.status]}</Badge></td>
                     <td className="p-3"><Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge></td>
                     <td className="p-3">{t.deadline ? <span className={isOverdue(t.deadline,t.status)?"text-destructive":""}>{fmtDate(t.deadline)}</span> : "—"}</td>
-                    <td className="p-3 text-muted-foreground">{t.customers?.name ?? "—"}</td>
+                    <td className="p-3 text-muted-foreground">{t.customers ? customerLabel(t.customers) : "—"}</td>
                     <td className="p-3 text-right">
                       <Button size="icon" variant="ghost" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => deleteTask(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>

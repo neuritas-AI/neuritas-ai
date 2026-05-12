@@ -90,7 +90,7 @@ function ProjectsPage() {
             </Link>
             <div className="flex items-start justify-between gap-2 mt-4">
               <ProjectStatusSelect project={p} onChanged={load} />
-              {p.status_reason && (PROJECT_STATUS_REQUIRES_REASON_CLIENT.has(p.status)) && (
+              {p.status_reason && PROJECT_STATUS_REQUIRES_REASON.has(p.status) && (
                 <span className="text-[11px] text-muted-foreground italic line-clamp-2 flex-1 text-right" title={p.status_reason}>
                   "{p.status_reason}"
                 </span>

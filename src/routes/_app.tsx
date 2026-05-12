@@ -201,7 +201,7 @@ function ChatUnreadBadge({ active }: { active: boolean }) {
     supabase.from("chat_messages").select("id", { count: "exact", head: true }).gt("created_at", lastSeen).neq("user_id", user.id).then(({ count }) => {
       setCount(count ?? 0);
     });
-    const ch = supabase.channel("chat-badge")
+    const ch = supabase.channel(`chat-badge-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
         if ((payload.new as any).user_id !== user.id) setCount(c => c + 1);
       })

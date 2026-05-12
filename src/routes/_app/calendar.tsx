@@ -143,7 +143,7 @@ function CalendarPage() {
                   <div className="space-y-2">
                     {dayAppts.length === 0 && <p className="text-xs text-muted-foreground">Geen afspraken</p>}
                     {dayAppts.map(a => (
-                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: a.color }}>
+                      <button key={a.id} onClick={()=>{setEditing(a); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: colorFor(a) }}>
                         <div className="font-medium">{a.title}</div>
                         <div>{fmtTime(a.start_at)} – {fmtTime(a.end_at)}</div>
                         {a.customers && <div className="opacity-80">{customerLabel(a.customers)}</div>}

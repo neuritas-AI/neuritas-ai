@@ -43,7 +43,7 @@ function CustomersPage() {
 
   const filtered = items.filter(c =>
     (statusFilter === "all" || c.status === statusFilter) &&
-    (!search || c.name.toLowerCase().includes(search.toLowerCase()) || (c.company ?? "").toLowerCase().includes(search.toLowerCase()))
+    (!search || (c.company ?? "").toLowerCase().includes(search.toLowerCase()) || (c.name ?? "").toLowerCase().includes(search.toLowerCase()))
   );
 
   async function del(id: string, e: React.MouseEvent) {

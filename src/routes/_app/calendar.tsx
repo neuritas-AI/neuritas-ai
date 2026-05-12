@@ -204,19 +204,21 @@ function CalendarPage() {
   );
 }
 
-function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, defaultDate, onClose }: any) {
+function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, types, defaultDate, onClose }: any) {
+  const TYPE_COLOR: Record<string,string> = Object.fromEntries((types ?? []).map((t: ApptType) => [t.key, t.color]));
+  const defaultType = (types && types[0]?.key) ?? "client_meeting";
   const init = appt ? {
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
-    appointment_type: appt.appointment_type ?? "client_meeting",
+    appointment_type: appt.appointment_type ?? defaultType,
     customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
     participants: appt.participants ?? [],
   } : {
     title: "", description: "",
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
-    appointment_type: "client_meeting",
+    appointment_type: defaultType,
     customer_id: "", project_id: "",
     participants: userId ? [userId] : [],
   };

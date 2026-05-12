@@ -14,6 +14,7 @@ import { nl } from "date-fns/locale";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { fmtTime } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
 

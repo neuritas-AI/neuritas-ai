@@ -108,17 +108,17 @@ function AppLayout() {
         </SheetContent>
       </Sheet>
       <main className="flex-1 min-w-0">
-        <header className="h-16 border-b flex items-center justify-between px-3 md:px-8 bg-background/80 backdrop-blur sticky top-0 z-10 gap-2">
+        <header className="h-16 md:h-16 min-h-[64px] border-b flex items-center justify-between px-2 md:px-8 bg-background/80 backdrop-blur sticky top-0 z-10 gap-2 pt-[env(safe-area-inset-top)]">
           <div className="flex items-center gap-2 md:hidden min-w-0">
-            <Button variant="ghost" size="icon" className="h-10 w-10 -ml-1" onClick={() => setMobileOpen(true)} aria-label="Menu">
-              <Menu className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="h-12 w-12" onClick={() => setMobileOpen(true)} aria-label="Menu">
+              <Menu className="h-6 w-6" />
             </Button>
             <Logo className="h-7 w-auto" />
           </div>
           <div className="hidden md:block font-display font-medium text-lg">
             {nav.find(n => path.startsWith(n.to))?.label ?? ""}
           </div>
-          <div className="flex items-center gap-1 md:gap-2">
+          <div className="flex items-center gap-1 md:gap-2 pr-1">
             <GlobalSearch />
             <NotificationsBell />
           </div>
@@ -155,9 +155,9 @@ function NotificationsBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          {unread > 0 && <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[10px] bg-gradient-brand border-0">{unread}</Badge>}
+        <Button variant="ghost" size="icon" className="relative h-12 w-12 md:h-10 md:w-10">
+          <Bell className="h-5 w-5 md:h-4 md:w-4" />
+          {unread > 0 && <Badge className="absolute top-1 right-1 h-5 min-w-5 px-1 text-[10px] bg-gradient-brand border-0">{unread}</Badge>}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">

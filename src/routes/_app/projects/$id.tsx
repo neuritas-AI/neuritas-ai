@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth";
 import { ProjectDialog } from "./index";
 import { usePermissions } from "@/lib/permissions";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
+import { MeetingsTab } from "@/components/MeetingsTab";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 
@@ -89,13 +90,18 @@ function ProjectDetail() {
       </Card>
 
       <Tabs defaultValue="overview">
-        <TabsList className="bg-muted/50">
+        <TabsList className="bg-muted/50 flex-wrap h-auto">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
           <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
           <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
+          <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="files">Bestanden ({files.length})</TabsTrigger>
           {(perms.can_view_invoices || perms.can_edit_invoices) && <TabsTrigger value="invoices">Facturen ({invoices.length})</TabsTrigger>}
         </TabsList>
+
+        <TabsContent value="meetings" className="mt-5">
+          <MeetingsTab projectId={id} userId={user?.id ?? null} profiles={profiles} />
+        </TabsContent>
 
         <TabsContent value="overview" className="mt-5 grid sm:grid-cols-3 gap-4">
           <Card className="p-5"><div className="text-xs text-muted-foreground">Open taken</div><div className="text-2xl font-display font-semibold mt-1">{tasks.filter(t=>t.status!=="done").length}</div></Card>

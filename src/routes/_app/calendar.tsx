@@ -78,9 +78,19 @@ function CalendarPage() {
         </div>
         <Dialog open={open} onOpenChange={(o)=>{setOpen(o); if(!o)setEditing(null);}}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button></DialogTrigger>
-          <ApptDialog appt={editing} customers={customers} projects={projects} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
+          <ApptDialog key={editing?.id ?? "new"} appt={editing} customers={customers} projects={projects} userId={user?.id ?? null} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null);}} />
         </Dialog>
       </div>
+
+      <Card className="p-3 flex flex-wrap gap-x-4 gap-y-2 items-center text-xs">
+        <span className="font-medium text-muted-foreground">Legenda:</span>
+        {APPT_TYPES.map(t => (
+          <span key={t.key} className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+            {t.label}
+          </span>
+        ))}
+      </Card>
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">

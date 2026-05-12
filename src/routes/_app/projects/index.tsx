@@ -15,6 +15,8 @@ import { useAuth } from "@/lib/auth";
 import { customerLabel } from "@/lib/customer-label";
 import { PROJECT_STATUSES, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
 
+import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
+
 export const Route = createFileRoute("/_app/projects/")({ component: ProjectsPage });
 
 function ProjectsPage() {

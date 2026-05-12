@@ -44,7 +44,10 @@ function Dashboard() {
     return () => { supabase.removeChannel(ch); };
   }, [role, isAdmin]);
 
-  const myTasks = tasks.filter(t => t.assignee_id === user?.id);
+  const myTasks = tasks.filter(t => {
+    const ids = (t.assignee_ids ?? []) as string[];
+    return user ? (t.assignee_id === user.id || ids.includes(user.id)) : false;
+  });
   const urgentTasks = tasks.filter(t => isUrgent(t.deadline, t.status));
   const followUpCustomers = customers.filter(c => c.status === "follow_up");
 

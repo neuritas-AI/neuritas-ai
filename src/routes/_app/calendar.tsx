@@ -193,7 +193,7 @@ function ApptDialog({ appt, customers, projects, userId, defaultDate, onClose }:
           <div><Label>Klant</Label>
             <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
               <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div><Label>Project</Label>

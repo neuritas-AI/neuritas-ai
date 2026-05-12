@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckSquare, Users, Calendar, Plus, AlertTriangle, Activity, Clock } from "lucide-react";
 import { fmtDate, fmtDateTime, isOverdue, isUrgent, priorityColor, statusColor, statusLabel, priorityLabel } from "@/lib/format";
+import { customerLabel } from "@/lib/customer-label";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { formatDistanceToNow } from "date-fns";

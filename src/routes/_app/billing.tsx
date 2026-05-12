@@ -123,7 +123,7 @@ function BillingPage() {
                   {invoices.map(inv => (
                     <tr key={inv.id} className="border-t hover:bg-accent/30 cursor-pointer" onClick={()=>perms.can_edit_invoices && setIDlg(inv)}>
                       <td className="p-3 font-medium">{inv.number}</td>
-                      <td className="p-3">{inv.customers?.name ?? "—"}</td>
+                      <td className="p-3">{inv.customers ? customerLabel(inv.customers) : "—"}</td>
                       <td className="p-3 text-muted-foreground">{inv.projects?.name ?? "—"}</td>
                       <td className="p-3">{fmtDate(inv.issue_date)}</td>
                       <td className="p-3">{inv.due_date ? fmtDate(inv.due_date) : "—"}</td>

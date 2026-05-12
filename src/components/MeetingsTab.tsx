@@ -129,17 +129,25 @@ function Section({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function MeetingDialog({ meeting, projectId, userId, profiles, onClose }: { meeting: Meeting | null; projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }>; onClose: () => void }) {
+function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }: { meeting: Meeting | null; projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }>; appts: Appt[]; onClose: () => void }) {
   const [date, setDate] = useState(meeting?.meeting_date ?? new Date().toISOString().slice(0, 10));
   const [by, setBy] = useState<string | null>(meeting?.conducted_by ?? userId);
+  const [appointmentId, setAppointmentId] = useState<string | null>(meeting?.appointment_id ?? null);
   const [discussed, setDiscussed] = useState(meeting?.discussed ?? "");
   const [problem, setProblem] = useState(meeting?.problem ?? "");
   const [solution, setSolution] = useState(meeting?.solution ?? "");
   const [saving, setSaving] = useState(false);
 
+  function pickAppt(v: string) {
+    if (v === "none") { setAppointmentId(null); return; }
+    setAppointmentId(v);
+    const a = appts.find(x => x.id === v);
+    if (a) setDate(a.start_at.slice(0, 10));
+  }
+
   async function save() {
     setSaving(true);
-    const payload = { project_id: projectId, meeting_date: date, conducted_by: by, discussed, problem, solution };
+    const payload = { project_id: projectId, meeting_date: date, conducted_by: by, discussed, problem, solution, appointment_id: appointmentId };
     const { error } = meeting
       ? await supabase.from("project_meetings").update(payload).eq("id", meeting.id)
       : await supabase.from("project_meetings").insert({ ...payload, created_by: userId });
@@ -153,10 +161,20 @@ function MeetingDialog({ meeting, projectId, userId, profiles, onClose }: { meet
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{meeting ? "Meeting bewerken" : "Nieuwe meeting"}</DialogTitle></DialogHeader>
       <div className="space-y-4">
+        <div>
+          <Label>📅 Koppel aan agenda-afspraak (optioneel)</Label>
+          <Select value={appointmentId ?? "none"} onValueChange={pickAppt}>
+            <SelectTrigger><SelectValue placeholder="Geen koppeling" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Geen koppeling</SelectItem>
+              {appts.map(a => <SelectItem key={a.id} value={a.id}>{a.title} — {new Date(a.start_at).toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" })}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <Label>Datum</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} disabled={!!appointmentId} />
           </div>
           <div>
             <Label>Uitgevoerd door</Label>

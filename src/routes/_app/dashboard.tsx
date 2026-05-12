@@ -116,7 +116,7 @@ function Dashboard() {
                       {isOverdue(t.deadline, t.status) && <Badge variant="destructive" className="text-[10px]">Te laat</Badge>}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5 flex gap-2 items-center">
-                      {t.customers?.name && <span>{t.customers.name}</span>}
+                      {t.customers && <span>{customerLabel(t.customers)}</span>}
                       {t.deadline && <span>· {fmtDate(t.deadline)}</span>}
                     </div>
                   </div>

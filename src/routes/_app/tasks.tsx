@@ -213,14 +213,22 @@ function TasksPage() {
 }
 
 function TaskDialog({ task, customers, profiles, projects, userId, onClose }: any) {
+  const initialAssignees: string[] = (task?.assignee_ids && task.assignee_ids.length)
+    ? task.assignee_ids
+    : (task?.assignee_id ? [task.assignee_id] : (userId ? [userId] : []));
   const [form, setForm] = useState({
     title: task?.title ?? "", description: task?.description ?? "",
     status: task?.status ?? "todo", priority: task?.priority ?? "normal",
     deadline: task?.deadline ? task.deadline.slice(0,10) : "",
-    customer_id: task?.customer_id ?? "", assignee_id: task?.assignee_id ?? userId ?? "",
+    customer_id: task?.customer_id ?? "",
+    assignee_ids: initialAssignees,
     project_id: task?.project_id ?? "",
     tags: (task?.tags ?? []).join(", "),
   });
+
+  function toggleAssignee(uid: string) {
+    setForm(f => ({ ...f, assignee_ids: f.assignee_ids.includes(uid) ? f.assignee_ids.filter((x: string) => x !== uid) : [...f.assignee_ids, uid] }));
+  }
 
   async function save() {
     if (!form.title.trim()) return toast.error("Titel verplicht");
@@ -228,7 +236,9 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
       title: form.title, description: form.description || null,
       status: form.status, priority: form.priority,
       deadline: form.deadline ? new Date(form.deadline).toISOString() : null,
-      customer_id: form.customer_id || null, assignee_id: form.assignee_id || null,
+      customer_id: form.customer_id || null,
+      assignee_id: form.assignee_ids[0] ?? null,
+      assignee_ids: form.assignee_ids,
       project_id: form.project_id || null,
       tags: form.tags.split(",").map((s: string)=>s.trim()).filter(Boolean),
       ...(task ? {} : { created_by: userId }),

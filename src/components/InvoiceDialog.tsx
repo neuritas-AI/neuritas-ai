@@ -94,7 +94,7 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v,project_id:""})}>
             <SelectTrigger><SelectValue placeholder="Selecteer…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.company || c.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Project *</Label>
@@ -171,7 +171,7 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
         <div><Label>Klant *</Label>
           <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v,project_id:""})}>
             <SelectTrigger><SelectValue placeholder="Selecteer…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{c.company || c.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div><Label>Project (optioneel)</Label>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { INVOICE_STATUSES, invoiceStatusLabel, QUOTE_STATUSES, quoteStatusLabel } from "@/lib/billing-format";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle } from "lucide-react";
+import { BillingFiles } from "./BillingFiles";
 
 async function suggestNumber(table: "invoices" | "quotes") {
   const year = new Date().getFullYear();

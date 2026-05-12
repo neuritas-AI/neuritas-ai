@@ -28,6 +28,7 @@ const baseNav = [
   { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
   { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
   { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null },
+  { to: "/notifications", label: "Meldingen", icon: Inbox, perm: null },
   { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
 ] as const;
 

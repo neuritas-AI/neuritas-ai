@@ -45,8 +45,8 @@ export function TaskUpdates({ taskId, profiles }: { taskId: string; profiles: an
     <div className="space-y-2">
       <Label>Updates / voortgang</Label>
       <div className="flex gap-2">
-        <Textarea rows={2} placeholder="Wat heb je gedaan?" value={text} onChange={e => setText(e.target.value)} />
-        <Button onClick={add} disabled={busy || !text.trim()} className="bg-gradient-brand border-0 self-end">Plaats</Button>
+        <Textarea rows={2} placeholder="Hou je team op de hoogte… wat heb je al gedaan?" value={text} onChange={e => setText(e.target.value)} />
+        <Button onClick={add} disabled={busy || !text.trim()} className="bg-gradient-brand border-0 self-end">Update posten</Button>
       </div>
       <div className="border rounded-md max-h-52 overflow-y-auto divide-y">
         {items.length === 0 && <p className="text-xs text-muted-foreground p-3 text-center">Nog geen updates</p>}

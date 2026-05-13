@@ -15,6 +15,7 @@ type Meeting = {
   id: string;
   project_id: string;
   meeting_date: string;
+  meeting_type: string;
   conducted_by: string | null;
   discussed: string | null;
   problem: string | null;
@@ -25,6 +26,8 @@ type Meeting = {
 };
 
 type Appt = { id: string; title: string; start_at: string };
+
+const MEETING_TYPE_LABEL: Record<string, string> = { first: "Eerste meeting", follow_up: "Vervolg meeting" };
 
 export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }> }) {
   const [items, setItems] = useState<Meeting[]>([]);
@@ -90,7 +93,12 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
                   <CalIcon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{fmtDate(m.meeting_date)}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="font-medium text-sm">{fmtDate(m.meeting_date)}</div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${m.meeting_type === "first" ? "bg-violet-500/10 text-violet-700 border-violet-500/30" : "bg-blue-500/10 text-blue-700 border-blue-500/30"}`}>
+                      {MEETING_TYPE_LABEL[m.meeting_type] ?? m.meeting_type}
+                    </span>
+                  </div>
                   <div className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                     <UserIcon className="h-3 w-3" /> {nameFor(m.conducted_by)}
                   </div>
@@ -103,8 +111,8 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
               {isOpen && (
                 <div className="px-4 pb-4 pt-0 space-y-3 border-t bg-muted/20">
                   <Section label="🧠 Besproken" value={m.discussed} />
-                  <Section label="⚠️ Probleem klant" value={m.problem} />
-                  <Section label="💡 Onze oplossing" value={m.solution} />
+                  {m.meeting_type === "first" && <Section label="⚠️ Pijnpunten" value={m.problem} />}
+                  {m.meeting_type === "first" && <Section label="💡 Onze oplossing" value={m.solution} />}
                   <div className="flex justify-end gap-2 pt-2">
                     <Button size="sm" variant="ghost" onClick={() => setOpen(m)}><Pencil className="h-3.5 w-3.5 mr-1" /> Bewerken</Button>
                     <Button size="sm" variant="ghost" onClick={() => del(m.id)}><Trash2 className="h-3.5 w-3.5 mr-1" /> Verwijderen</Button>
@@ -133,6 +141,7 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
   const [date, setDate] = useState(meeting?.meeting_date ?? new Date().toISOString().slice(0, 10));
   const [by, setBy] = useState<string | null>(meeting?.conducted_by ?? userId);
   const [appointmentId, setAppointmentId] = useState<string | null>(meeting?.appointment_id ?? null);
+  const [meetingType, setMeetingType] = useState<string>(meeting?.meeting_type ?? "first");
   const [discussed, setDiscussed] = useState(meeting?.discussed ?? "");
   const [problem, setProblem] = useState(meeting?.problem ?? "");
   const [solution, setSolution] = useState(meeting?.solution ?? "");
@@ -147,7 +156,14 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
 
   async function save() {
     setSaving(true);
-    const payload = { project_id: projectId, meeting_date: date, conducted_by: by, discussed, problem, solution, appointment_id: appointmentId };
+    const payload: any = {
+      project_id: projectId, meeting_date: date, conducted_by: by,
+      meeting_type: meetingType,
+      discussed,
+      problem: meetingType === "first" ? problem : null,
+      solution: meetingType === "first" ? solution : null,
+      appointment_id: appointmentId,
+    };
     const { error } = meeting
       ? await supabase.from("project_meetings").update(payload).eq("id", meeting.id)
       : await supabase.from("project_meetings").insert({ ...payload, created_by: userId });
@@ -187,17 +203,31 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
           </div>
         </div>
         <div>
+          <Label>Type meeting</Label>
+          <Select value={meetingType} onValueChange={setMeetingType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="first">Eerste meeting</SelectItem>
+              <SelectItem value="follow_up">Vervolg meeting</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <Label>🧠 Wat is er besproken</Label>
-          <Textarea rows={3} value={discussed} onChange={e => setDiscussed(e.target.value)} placeholder="Korte samenvatting van het gesprek…" />
+          <Textarea rows={meetingType === "first" ? 3 : 5} value={discussed} onChange={e => setDiscussed(e.target.value)} placeholder="Korte samenvatting van het gesprek…" />
         </div>
-        <div>
-          <Label>⚠️ Probleem van de klant</Label>
-          <Textarea rows={3} value={problem} onChange={e => setProblem(e.target.value)} placeholder="- Pijnpunt 1&#10;- Pijnpunt 2" />
-        </div>
-        <div>
-          <Label>💡 Onze oplossing</Label>
-          <Textarea rows={3} value={solution} onChange={e => setSolution(e.target.value)} placeholder="- Aanpak / aanbod" />
-        </div>
+        {meetingType === "first" && (
+          <>
+            <div>
+              <Label>⚠️ Pijnpunten</Label>
+              <Textarea rows={3} value={problem} onChange={e => setProblem(e.target.value)} placeholder="- Pijnpunt 1&#10;- Pijnpunt 2" />
+            </div>
+            <div>
+              <Label>💡 Onze oplossing</Label>
+              <Textarea rows={3} value={solution} onChange={e => setSolution(e.target.value)} placeholder="- Aanpak / aanbod" />
+            </div>
+          </>
+        )}
       </div>
       <DialogFooter>
         <Button variant="ghost" onClick={onClose}>Annuleren</Button>

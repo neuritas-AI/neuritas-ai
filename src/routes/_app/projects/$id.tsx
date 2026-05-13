@@ -16,6 +16,7 @@ import { ProjectDialog } from "./index";
 import { usePermissions } from "@/lib/permissions";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
+import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 
@@ -188,6 +189,7 @@ function ProjectDetail() {
 
 function ProjectFiles({ projectId, customerId, files, userId }: any) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<any | null>(null);
   async function upload(fl: FileList | null) {
     if (!fl || !userId) return;
     for (const file of Array.from(fl)) {
@@ -225,13 +227,13 @@ function ProjectFiles({ projectId, customerId, files, userId }: any) {
         {files.length === 0 && <div className="col-span-full text-center text-muted-foreground py-8 text-sm">Nog geen bestanden</div>}
         {files.map((f: any) => (
           <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors">
-            <div className="flex items-start gap-3">
+            <button type="button" onClick={() => setPreview(f)} className="flex items-start gap-3 w-full text-left">
               <div className="h-10 w-10 rounded-lg bg-gradient-brand-soft grid place-items-center text-primary"><FileText className="h-5 w-5" /></div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{f.name}</div>
+                <div className="font-medium text-sm truncate group-hover:text-primary">{f.name}</div>
                 <div className="text-xs text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
               </div>
-            </div>
+            </button>
             <div className="flex gap-1 mt-3 justify-end">
               <Button size="sm" variant="ghost" onClick={()=>download(f)}><Download className="h-3.5 w-3.5" /></Button>
               <Button size="sm" variant="ghost" onClick={()=>del(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
@@ -239,6 +241,7 @@ function ProjectFiles({ projectId, customerId, files, userId }: any) {
           </Card>
         ))}
       </div>
+      <FilePreviewDialog file={preview} onClose={() => setPreview(null)} />
     </Card>
   );
 }

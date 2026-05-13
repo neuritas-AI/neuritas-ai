@@ -141,6 +141,7 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
   const [date, setDate] = useState(meeting?.meeting_date ?? new Date().toISOString().slice(0, 10));
   const [by, setBy] = useState<string | null>(meeting?.conducted_by ?? userId);
   const [appointmentId, setAppointmentId] = useState<string | null>(meeting?.appointment_id ?? null);
+  const [meetingType, setMeetingType] = useState<string>(meeting?.meeting_type ?? "first");
   const [discussed, setDiscussed] = useState(meeting?.discussed ?? "");
   const [problem, setProblem] = useState(meeting?.problem ?? "");
   const [solution, setSolution] = useState(meeting?.solution ?? "");
@@ -155,7 +156,14 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
 
   async function save() {
     setSaving(true);
-    const payload = { project_id: projectId, meeting_date: date, conducted_by: by, discussed, problem, solution, appointment_id: appointmentId };
+    const payload: any = {
+      project_id: projectId, meeting_date: date, conducted_by: by,
+      meeting_type: meetingType,
+      discussed,
+      problem: meetingType === "first" ? problem : null,
+      solution: meetingType === "first" ? solution : null,
+      appointment_id: appointmentId,
+    };
     const { error } = meeting
       ? await supabase.from("project_meetings").update(payload).eq("id", meeting.id)
       : await supabase.from("project_meetings").insert({ ...payload, created_by: userId });
@@ -195,17 +203,31 @@ function MeetingDialog({ meeting, projectId, userId, profiles, appts, onClose }:
           </div>
         </div>
         <div>
+          <Label>Type meeting</Label>
+          <Select value={meetingType} onValueChange={setMeetingType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="first">Eerste meeting</SelectItem>
+              <SelectItem value="follow_up">Vervolg meeting</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
           <Label>🧠 Wat is er besproken</Label>
-          <Textarea rows={3} value={discussed} onChange={e => setDiscussed(e.target.value)} placeholder="Korte samenvatting van het gesprek…" />
+          <Textarea rows={meetingType === "first" ? 3 : 5} value={discussed} onChange={e => setDiscussed(e.target.value)} placeholder="Korte samenvatting van het gesprek…" />
         </div>
-        <div>
-          <Label>⚠️ Probleem van de klant</Label>
-          <Textarea rows={3} value={problem} onChange={e => setProblem(e.target.value)} placeholder="- Pijnpunt 1&#10;- Pijnpunt 2" />
-        </div>
-        <div>
-          <Label>💡 Onze oplossing</Label>
-          <Textarea rows={3} value={solution} onChange={e => setSolution(e.target.value)} placeholder="- Aanpak / aanbod" />
-        </div>
+        {meetingType === "first" && (
+          <>
+            <div>
+              <Label>⚠️ Pijnpunten</Label>
+              <Textarea rows={3} value={problem} onChange={e => setProblem(e.target.value)} placeholder="- Pijnpunt 1&#10;- Pijnpunt 2" />
+            </div>
+            <div>
+              <Label>💡 Onze oplossing</Label>
+              <Textarea rows={3} value={solution} onChange={e => setSolution(e.target.value)} placeholder="- Aanpak / aanbod" />
+            </div>
+          </>
+        )}
       </div>
       <DialogFooter>
         <Button variant="ghost" onClick={onClose}>Annuleren</Button>

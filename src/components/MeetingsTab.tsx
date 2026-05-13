@@ -93,7 +93,12 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
                   <CalIcon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{fmtDate(m.meeting_date)}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="font-medium text-sm">{fmtDate(m.meeting_date)}</div>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${m.meeting_type === "first" ? "bg-violet-500/10 text-violet-700 border-violet-500/30" : "bg-blue-500/10 text-blue-700 border-blue-500/30"}`}>
+                      {MEETING_TYPE_LABEL[m.meeting_type] ?? m.meeting_type}
+                    </span>
+                  </div>
                   <div className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
                     <UserIcon className="h-3 w-3" /> {nameFor(m.conducted_by)}
                   </div>
@@ -106,8 +111,8 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
               {isOpen && (
                 <div className="px-4 pb-4 pt-0 space-y-3 border-t bg-muted/20">
                   <Section label="🧠 Besproken" value={m.discussed} />
-                  <Section label="⚠️ Probleem klant" value={m.problem} />
-                  <Section label="💡 Onze oplossing" value={m.solution} />
+                  {m.meeting_type === "first" && <Section label="⚠️ Pijnpunten" value={m.problem} />}
+                  {m.meeting_type === "first" && <Section label="💡 Onze oplossing" value={m.solution} />}
                   <div className="flex justify-end gap-2 pt-2">
                     <Button size="sm" variant="ghost" onClick={() => setOpen(m)}><Pencil className="h-3.5 w-3.5 mr-1" /> Bewerken</Button>
                     <Button size="sm" variant="ghost" onClick={() => del(m.id)}><Trash2 className="h-3.5 w-3.5 mr-1" /> Verwijderen</Button>

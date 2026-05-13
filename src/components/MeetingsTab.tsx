@@ -15,6 +15,7 @@ type Meeting = {
   id: string;
   project_id: string;
   meeting_date: string;
+  meeting_type: string;
   conducted_by: string | null;
   discussed: string | null;
   problem: string | null;
@@ -25,6 +26,8 @@ type Meeting = {
 };
 
 type Appt = { id: string; title: string; start_at: string };
+
+const MEETING_TYPE_LABEL: Record<string, string> = { first: "Eerste meeting", follow_up: "Vervolg meeting" };
 
 export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }> }) {
   const [items, setItems] = useState<Meeting[]>([]);

@@ -453,6 +453,7 @@ export type Database = {
           discussed: string | null
           id: string
           meeting_date: string
+          meeting_type: string
           problem: string | null
           project_id: string
           solution: string | null
@@ -466,6 +467,7 @@ export type Database = {
           discussed?: string | null
           id?: string
           meeting_date?: string
+          meeting_type?: string
           problem?: string | null
           project_id: string
           solution?: string | null
@@ -479,6 +481,7 @@ export type Database = {
           discussed?: string | null
           id?: string
           meeting_date?: string
+          meeting_type?: string
           problem?: string | null
           project_id?: string
           solution?: string | null

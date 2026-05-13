@@ -286,6 +286,7 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
     <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{task ? "Taak bewerken" : "Nieuwe taak"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
+        {task && <TaskUpdates taskId={task.id} profiles={profiles} />}
         <div><Label>Titel *</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
         <div><Label>Beschrijving / Notities</Label><Textarea rows={3} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
         <div className="grid grid-cols-2 gap-3">
@@ -338,7 +339,6 @@ function TaskDialog({ task, customers, profiles, projects, userId, onClose }: an
           </div>
         </div>
         <div><Label>Tags (komma-gescheiden)</Label><Input value={form.tags} onChange={e=>setForm({...form,tags:e.target.value})} placeholder="urgent, design" /></div>
-        {task && <TaskUpdates taskId={task.id} profiles={profiles} />}
       </div>
       <DialogFooter className="gap-2">
         {task && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

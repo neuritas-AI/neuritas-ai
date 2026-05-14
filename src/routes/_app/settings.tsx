@@ -26,6 +26,8 @@ function SettingsPage() {
   const { theme, toggle } = useTheme();
   const { isAdmin } = useRole();
   const [name, setName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
 
@@ -41,7 +43,10 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => setName(data?.full_name ?? ""));
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+      setName(data?.full_name ?? "");
+      setAvatarUrl(data?.avatar_url ?? null);
+    });
     loadMembers();
   }, [user]);
 
@@ -50,6 +55,26 @@ function SettingsPage() {
     if (error) return toast.error(error.message);
     toast.success("Opgeslagen");
   }
+
+  async function uploadAvatar(file: File) {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) return toast.error("Enkel afbeeldingen toegestaan");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setUploadingAvatar(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploadingAvatar(false); return toast.error(upErr.message); }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const url = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+    setUploadingAvatar(false);
+    if (error) return toast.error(error.message);
+    setAvatarUrl(url);
+    toast.success("Profielfoto bijgewerkt");
+    loadMembers();
+  }
+
 
   async function changePassword() {
     const pw = prompt("Nieuw wachtwoord (min. 6 tekens):");

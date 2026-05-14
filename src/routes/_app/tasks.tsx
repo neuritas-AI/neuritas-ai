@@ -167,12 +167,8 @@ function TasksPage() {
                         )}
                       </div>
                       {assignees.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {assignees.map((a: any) => (
-                            <span key={a.id} className="text-[10px] bg-gradient-brand-soft text-primary px-1.5 py-0.5 rounded-full">
-                              {a.full_name ?? "—"}
-                            </span>
-                          ))}
+                        <div className="mt-2">
+                          <UserAvatarStack profiles={assignees as any[]} size={22} />
                         </div>
                       )}
                       {(() => {
@@ -182,6 +178,7 @@ function TasksPage() {
                           <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                             {worker ? (
                               <span className="text-[10px] inline-flex items-center gap-1 text-success">
+                                <UserAvatar profile={worker} size={18} />
                                 <Hand className="h-3 w-3" /> Bezig: {worker.full_name ?? "—"}
                               </span>
                             ) : <span />}

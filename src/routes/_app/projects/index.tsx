@@ -30,7 +30,7 @@ function ProjectsPage() {
 
   async function load() {
     const [{ data: p }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("projects").select("*, customers(name, company)").order("updated_at", { ascending: false }),
+      supabase.from("projects").select("*, customers(name, company, color)").order("updated_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
     ]);

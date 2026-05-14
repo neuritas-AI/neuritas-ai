@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Calendar as CalIcon, User as UserIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar as CalIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { fmtDate } from "@/lib/format";
+import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
 
 type Meeting = {

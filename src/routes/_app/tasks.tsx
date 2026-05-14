@@ -152,7 +152,8 @@ function TasksPage() {
                   {filtered.filter(t => t.status === s).map(t => {
                     const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
                     return (
-                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer border-l-4 ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                      style={{ borderLeftColor: t.customers?.color || "transparent" }}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
                       <div className="font-medium text-sm">{t.title}</div>
                       {t.customers && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}

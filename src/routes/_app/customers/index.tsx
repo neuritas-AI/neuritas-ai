@@ -114,6 +114,7 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
     name: customer?.name ?? "", company: customer?.company ?? "", email: customer?.email ?? "",
     phone: customer?.phone ?? "", status: customer?.status ?? "lead", notes: customer?.notes ?? "",
     assigned_to: customer?.assigned_to ?? [],
+    color: customer?.color ?? "",
   });
   function toggleAssign(uid: string) {
     setForm(f => ({ ...f, assigned_to: f.assigned_to.includes(uid) ? f.assigned_to.filter((x: string)=>x!==uid) : [...f.assigned_to, uid] }));

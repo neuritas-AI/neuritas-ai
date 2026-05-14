@@ -167,6 +167,9 @@ function NotificationsPage() {
                   {n.body && <div className="text-xs text-muted-foreground mt-0.5">{n.body}</div>}
                   <div className="text-[10px] text-muted-foreground/70 mt-1">{format(new Date(n.created_at), "dd MMM yyyy HH:mm", { locale: nl })}</div>
                 </button>
+                <Button size="icon" variant="ghost" onClick={() => deleteOne(n)} className="h-7 w-7 shrink-0" aria-label="Verwijder">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
 
               {isInvite && (

@@ -103,6 +103,16 @@ function SettingsPage() {
         <TabsContent value="profile" className="space-y-5 mt-5">
           <Card className="p-6 space-y-4">
             <h2 className="font-display font-semibold">Profielgegevens</h2>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <UserAvatar profile={{ full_name: name, avatar_url: avatarUrl }} size={72} />
+                <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-gradient-brand grid place-items-center text-white cursor-pointer shadow-soft" title="Foto wijzigen">
+                  <Camera className="h-3.5 w-3.5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ""; }} />
+                </label>
+              </div>
+              <div className="text-xs text-muted-foreground">{uploadingAvatar ? "Uploaden…" : "Klik op het camera-icoon om je profielfoto te wijzigen (max 5MB)."}</div>
+            </div>
             <div><Label>Naam</Label><Input value={name} onChange={e=>setName(e.target.value)} /></div>
             <div><Label>E-mail</Label><Input value={email} disabled /></div>
             <div className="flex gap-2">
@@ -114,6 +124,7 @@ function SettingsPage() {
             <Button variant="destructive" onClick={signOut}>Uitloggen</Button>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="display" className="mt-5">
           <Card className="p-6 space-y-4">

@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, ChevronRight, Building2 } from "lucide-react";
-import { statusColor, statusLabel } from "@/lib/format";
+import { statusLabel } from "@/lib/format";
 import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { CUSTOMER_COLORS, customerAccent } from "@/lib/customer-colors";
+import { CustomerStatusSelect } from "@/components/CustomerStatusSelect";
 
 export const Route = createFileRoute("/_app/customers/")({ component: CustomersPage });
 

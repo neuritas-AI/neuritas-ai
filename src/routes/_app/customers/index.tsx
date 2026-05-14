@@ -144,6 +144,20 @@ function CustomerDialog({ userId, onClose, customer, profiles }: any) {
             <SelectContent>{CSTATUSES.map(s=> <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        <div>
+          <Label>Kleur</Label>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {CUSTOMER_COLORS.map(c => {
+              const active = form.color === c.value;
+              return (
+                <button key={c.value} type="button" onClick={()=>setForm({...form, color: active ? "" : c.value})}
+                  title={c.label}
+                  className={`h-7 w-7 rounded-full border-2 transition-all ${active ? "border-foreground scale-110" : "border-transparent"}`}
+                  style={{ background: c.value }} />
+              );
+            })}
+          </div>
+        </div>
         {profiles && profiles.length > 0 && (
           <div>
             <Label>Verantwoordelijken</Label>

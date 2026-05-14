@@ -84,10 +84,10 @@ function CustomersPage() {
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen klanten gevonden</Card>}
         {filtered.map(c => (
           <Link key={c.id} to="/customers/$id" params={{ id: c.id }} className="group">
-            <Card className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full">
+            <Card className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full border-l-4" style={{ borderLeftColor: customerAccent(c.color) }}>
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-start gap-3">
-                <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center font-semibold shrink-0">
+                <div className="h-11 w-11 rounded-xl grid place-items-center font-semibold shrink-0 text-white" style={{ background: customerAccent(c.color) }}>
                   {customerLabel(c).slice(0,2).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -97,8 +97,8 @@ function CustomersPage() {
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex items-center justify-between mt-4">
-                <Badge className={statusColor[c.status]}>{statusLabel[c.status]}</Badge>
+              <div className="flex items-center justify-between mt-4" onClick={(e)=>e.preventDefault()}>
+                <CustomerStatusSelect customer={c} onChanged={load} />
                 <Button size="icon" variant="ghost" onClick={(e)=>del(c.id, e)} className="h-7 w-7 opacity-0 group-hover:opacity-100"><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
             </Card>

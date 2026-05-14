@@ -30,7 +30,7 @@ function ProjectsPage() {
 
   async function load() {
     const [{ data: p }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("projects").select("*, customers(name, company)").order("updated_at", { ascending: false }),
+      supabase.from("projects").select("*, customers(name, company, color)").order("updated_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
     ]);
@@ -75,7 +75,7 @@ function ProjectsPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen projecten</Card>}
         {filtered.map(p => (
-          <Card key={p.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full group">
+          <Card key={p.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4" style={{ borderLeftColor: p.customers?.color || "transparent" }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
             <Link to="/projects/$id" params={{ id: p.id }} className="flex items-start gap-3">
               <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center shrink-0">

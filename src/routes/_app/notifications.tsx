@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow, format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info } from "lucide-react";
+import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({ component: NotificationsPage });
@@ -73,6 +73,14 @@ function NotificationsPage() {
     await supabase.from("notifications").update({ read: true }).eq("read", false);
     toast.success("Alles gemarkeerd als gelezen");
   }
+  async function deleteOne(n: Notif) {
+    await supabase.from("notifications").delete().eq("id", n.id);
+  }
+  async function deleteAllRead() {
+    if (!confirm("Alle gelezen meldingen verwijderen?")) return;
+    await supabase.from("notifications").delete().eq("read", true);
+    toast.success("Gelezen meldingen verwijderd");
+  }
   async function openItem(n: Notif) {
     await markRead(n);
     if (n.link) navigate({ to: n.link as any });
@@ -118,6 +126,11 @@ function NotificationsPage() {
               <CheckCheck className="h-4 w-4 mr-1" /> Markeer alles
             </Button>
           )}
+          {items.some(i => i.read) && (
+            <Button variant="outline" size="sm" onClick={deleteAllRead}>
+              <Trash2 className="h-4 w-4 mr-1" /> Verwijder gelezen
+            </Button>
+          )}
         </div>
       </div>
 
@@ -154,6 +167,9 @@ function NotificationsPage() {
                   {n.body && <div className="text-xs text-muted-foreground mt-0.5">{n.body}</div>}
                   <div className="text-[10px] text-muted-foreground/70 mt-1">{format(new Date(n.created_at), "dd MMM yyyy HH:mm", { locale: nl })}</div>
                 </button>
+                <Button size="icon" variant="ghost" onClick={() => deleteOne(n)} className="h-7 w-7 shrink-0" aria-label="Verwijder">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
 
               {isInvite && (

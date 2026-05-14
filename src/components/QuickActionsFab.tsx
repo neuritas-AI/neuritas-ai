@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Plus, CheckSquare, Users, Calendar, FolderKanban, Receipt } from "lucide-react";
+import { Plus, Users, Calendar, FolderKanban, Receipt } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { usePermissions } from "@/lib/permissions";
 
@@ -17,7 +17,6 @@ export function QuickActionsFab() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="end" className="w-52">
-        <DropdownMenuItem onClick={() => nav({ to: "/tasks" })}><CheckSquare className="h-4 w-4 mr-2" /> Nieuwe taak</DropdownMenuItem>
         <DropdownMenuItem onClick={() => nav({ to: "/projects" })}><FolderKanban className="h-4 w-4 mr-2" /> Nieuw project</DropdownMenuItem>
         <DropdownMenuItem onClick={() => nav({ to: "/customers" })}><Users className="h-4 w-4 mr-2" /> Nieuwe klant</DropdownMenuItem>
         <DropdownMenuItem onClick={() => nav({ to: "/calendar" })}><Calendar className="h-4 w-4 mr-2" /> Nieuwe afspraak</DropdownMenuItem>

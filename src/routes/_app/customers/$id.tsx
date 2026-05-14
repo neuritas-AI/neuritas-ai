@@ -16,6 +16,8 @@ import { fmtDateTime, fmtDate, statusColor, statusLabel, priorityColor, priority
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { CustomerDialog } from "./index";
+import { CustomerStatusSelect } from "@/components/CustomerStatusSelect";
+import { customerAccent } from "@/lib/customer-colors";
 
 export const Route = createFileRoute("/_app/customers/$id")({ component: CustomerDetail });
 
@@ -80,7 +82,7 @@ function CustomerDetail() {
         <div className="bg-gradient-brand-soft p-6 md:p-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-gradient-brand grid place-items-center text-white text-xl font-semibold shadow-brand shrink-0">
+              <div className="h-16 w-16 rounded-2xl grid place-items-center text-white text-xl font-semibold shadow-brand shrink-0" style={{ background: customerAccent(customer.color) }}>
                 {(customer.company || customer.name || "?").slice(0,2).toUpperCase()}
               </div>
               <div>
@@ -91,7 +93,12 @@ function CustomerDetail() {
                   {customer.phone && <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1.5 hover:text-primary"><Phone className="h-3.5 w-3.5" />{customer.phone}</a>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <Badge className={statusColor[customer.status]}>{statusLabel[customer.status]}</Badge>
+                  <CustomerStatusSelect customer={customer} onChanged={load} />
+                  {customer.follow_up_at && customer.status === "follow_up" && (
+                    <span className="text-xs text-muted-foreground italic">
+                      Opvolgen op {fmtDate(customer.follow_up_at)}{customer.follow_up_reason ? ` — ${customer.follow_up_reason}` : ""}
+                    </span>
+                  )}
                   {assignedNames && <span className="text-xs text-muted-foreground inline-flex items-center gap-1"><UsersIcon className="h-3 w-3" /> {assignedNames}</span>}
                 </div>
               </div>

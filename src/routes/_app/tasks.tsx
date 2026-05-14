@@ -41,7 +41,7 @@ function TasksPage() {
   const [projects, setProjects] = useState<any[]>([]);
   async function load() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }),
+      supabase.from("tasks").select("*, customers(name, company, color), projects(name)").order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
@@ -99,7 +99,7 @@ function TasksPage() {
           <p className="text-muted-foreground text-sm mt-1">Beheer to-do's, prioriteiten en deadlines</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-          <DialogTrigger asChild><Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
+          <span className="text-xs text-muted-foreground italic">Taken worden binnen een project aangemaakt.</span>
           <TaskDialog key={editing?.id ?? "new"} task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
         </Dialog>
       </div>
@@ -152,7 +152,8 @@ function TasksPage() {
                   {filtered.filter(t => t.status === s).map(t => {
                     const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
                     return (
-                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer border-l-4 ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                      style={{ borderLeftColor: t.customers?.color || "transparent" }}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
                       <div className="font-medium text-sm">{t.title}</div>
                       {t.customers && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}

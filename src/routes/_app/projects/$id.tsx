@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon, Plus } from "lucide-react";
 import { fmtDate, fmtDateTime, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, PROJECT_STATUS_REQUIRES_REASON } from "@/lib/billing-format";
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
@@ -17,6 +17,7 @@ import { usePermissions } from "@/lib/permissions";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
+import { TaskDialog } from "@/components/TaskDialog";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 

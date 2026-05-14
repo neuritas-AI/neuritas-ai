@@ -126,6 +126,11 @@ function NotificationsPage() {
               <CheckCheck className="h-4 w-4 mr-1" /> Markeer alles
             </Button>
           )}
+          {items.some(i => i.read) && (
+            <Button variant="outline" size="sm" onClick={deleteAllRead}>
+              <Trash2 className="h-4 w-4 mr-1" /> Verwijder gelezen
+            </Button>
+          )}
         </div>
       </div>
 

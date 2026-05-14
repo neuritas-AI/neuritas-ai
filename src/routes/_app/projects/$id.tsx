@@ -118,9 +118,16 @@ function ProjectDetail() {
 
         <TabsContent value="tasks" className="mt-5">
           <Card className="p-5 space-y-2">
-            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen taken — voeg ze toe via Taken en koppel aan dit project</p>}
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-display font-semibold">Taken</h2>
+              <Button size="sm" className="bg-gradient-brand border-0" onClick={()=>setTaskDialog({})}>
+                <Plus className="h-4 w-4 mr-1" /> Nieuwe taak
+              </Button>
+            </div>
+            {tasks.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Nog geen taken</p>}
             {tasks.map(t => (
-              <div key={t.id} className="p-3 rounded-lg border flex items-center justify-between hover:border-primary/40 transition-colors">
+              <button key={t.id} type="button" onClick={()=>setTaskDialog(t)}
+                className="w-full text-left p-3 rounded-lg border flex items-center justify-between hover:border-primary/40 transition-colors">
                 <div>
                   <div className="font-medium text-sm">{t.title}</div>
                   {t.deadline && <div className="text-xs text-muted-foreground">{fmtDate(t.deadline)}</div>}
@@ -129,8 +136,21 @@ function ProjectDetail() {
                   <Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge>
                   <Badge className={statusColor[t.status]}>{statusLabel[t.status]}</Badge>
                 </div>
-              </div>
+              </button>
             ))}
+            {taskDialog !== false && (
+              <Dialog open={true} onOpenChange={(o)=>!o && setTaskDialog(false)}>
+                <TaskDialog
+                  task={taskDialog?.id ? taskDialog : undefined}
+                  customers={customers}
+                  profiles={profiles}
+                  projects={[{ id: project.id, name: project.name, customer_id: project.customer_id }]}
+                  userId={user?.id ?? null}
+                  lockedProjectId={project.id}
+                  onClose={()=>setTaskDialog(false)}
+                />
+              </Dialog>
+            )}
           </Card>
         </TabsContent>
 

@@ -100,8 +100,8 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
                       {MEETING_TYPE_LABEL[m.meeting_type] ?? m.meeting_type}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
-                    <UserIcon className="h-3 w-3" /> {nameFor(m.conducted_by)}
+                  <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5 mt-1">
+                    <UserAvatar profile={profiles.find(p => p.id === m.conducted_by) ?? { full_name: nameFor(m.conducted_by) }} size={20} /> {nameFor(m.conducted_by)}
                   </div>
                   {!isOpen && m.discussed && (
                     <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{m.discussed}</div>

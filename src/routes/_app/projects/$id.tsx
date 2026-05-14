@@ -35,6 +35,7 @@ function ProjectDetail() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [edit, setEdit] = useState(false);
   const [invDialog, setInvDialog] = useState<any | false>(false);
+  const [taskDialog, setTaskDialog] = useState<any | false>(false);
 
   async function load() {
     const [{ data: p }, { data: t }, { data: a }, { data: f }, { data: pr }, { data: cs }] = await Promise.all([

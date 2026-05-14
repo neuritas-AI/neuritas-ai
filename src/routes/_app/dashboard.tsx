@@ -28,7 +28,7 @@ function Dashboard() {
       supabase.from("tasks").select("*, customers(name, company)").neq("status", "done").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
       supabase.from("appointments").select("*, customers(name, company)").gte("end_at", new Date().toISOString()).order("start_at").limit(10),
       supabase.from("customers").select("*").order("updated_at", { ascending: false }).limit(20),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
     setTasks(t ?? []); setAppts(a ?? []); setCustomers(c ?? []); setProfiles(p ?? []);
     if (isAdmin) {

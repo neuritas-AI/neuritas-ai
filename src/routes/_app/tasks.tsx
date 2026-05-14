@@ -43,7 +43,7 @@ function TasksPage() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
       supabase.from("tasks").select("*, customers(name, company, color), projects(name)").order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);
     setTasks(t ?? []); setCustomers(c ?? []); setProfiles(p ?? []); setProjects(pr ?? []);

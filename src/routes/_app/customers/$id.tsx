@@ -43,7 +43,7 @@ function CustomerDetail() {
       supabase.from("tasks").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
       supabase.from("appointments").select("*").eq("customer_id", id).order("start_at", { ascending: false }),
       supabase.from("projects").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
     setCustomer(c); setNotes(n ?? []); setTasks(t ?? []); setAppts(a ?? []); setProjects(pj ?? []); setProfiles(p ?? []);
     if (perms.can_view_quotes || perms.can_edit_quotes) {

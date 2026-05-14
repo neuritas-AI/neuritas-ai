@@ -33,7 +33,7 @@ function ChatPage() {
   async function loadProfiles(ids: string[]) {
     const missing = ids.filter(id => !(id in profiles));
     if (missing.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id, full_name").in("id", missing);
+    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", missing);
     if (data) {
       setProfiles(p => ({ ...p, ...Object.fromEntries(data.map((x: any) => [x.id, { full_name: x.full_name }])) }));
     }

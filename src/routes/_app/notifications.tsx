@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow, format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info } from "lucide-react";
+import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({ component: NotificationsPage });

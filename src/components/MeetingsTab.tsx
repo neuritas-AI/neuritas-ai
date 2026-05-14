@@ -30,7 +30,7 @@ type Appt = { id: string; title: string; start_at: string };
 
 const MEETING_TYPE_LABEL: Record<string, string> = { first: "Eerste meeting", follow_up: "Vervolg meeting" };
 
-export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }> }) {
+export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null; avatar_url?: string | null }> }) {
   const [items, setItems] = useState<Meeting[]>([]);
   const [appts, setAppts] = useState<Appt[]>([]);
   const [open, setOpen] = useState<Meeting | null | false>(false);

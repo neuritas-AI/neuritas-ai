@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type Update = { id: string; user_id: string; content: string; created_at: string };
 

@@ -261,7 +261,7 @@ function NewUserDialog({ onCreated }: any) {
         <div className="space-y-3">
           <div><Label>Volledige naam</Label><Input value={form.full_name} onChange={e=>setForm({...form, full_name: e.target.value})} /></div>
           <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={e=>setForm({...form, email: e.target.value})} /></div>
-          <div><Label>Tijdelijk wachtwoord</Label><Input type="text" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} placeholder="Min. 6 tekens" /></div>
+          <div><Label>Tijdelijk wachtwoord</Label><Input type="password" autoComplete="new-password" value={form.password} onChange={e=>setForm({...form, password: e.target.value})} placeholder="Min. 6 tekens" /></div>
           <div><Label>Rol</Label>
             <Select value={form.role} onValueChange={v=>setForm({...form, role: v})}>
               <SelectTrigger><SelectValue /></SelectTrigger>

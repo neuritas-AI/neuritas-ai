@@ -55,6 +55,7 @@ export function TaskUpdates({ taskId, profiles }: { taskId: string; profiles: an
           const p = profiles.find(x => x.id === u.user_id);
           return (
             <div key={u.id} className="p-2 text-sm flex gap-2">
+              <UserAvatar profile={p} size={28} />
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{p?.full_name ?? "Iemand"}</span>

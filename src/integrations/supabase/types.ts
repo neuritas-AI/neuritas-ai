@@ -44,6 +44,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_academy_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_mime: string | null
+          file_name: string | null
+          id: string
+          importance: string | null
+          link: string | null
+          storage_path: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_mime?: string | null
+          file_name?: string | null
+          id?: string
+          importance?: string | null
+          link?: string | null
+          storage_path?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_mime?: string | null
+          file_name?: string | null
+          id?: string
+          importance?: string | null
+          link?: string | null
+          storage_path?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       appointment_attendance: {
         Row: {
           appointment_id: string
@@ -107,6 +146,8 @@ export type Database = {
           id: string
           participants: string[]
           project_id: string | null
+          reminder_at: string | null
+          reminder_sent: boolean
           start_at: string
           title: string
           updated_at: string
@@ -122,6 +163,8 @@ export type Database = {
           id?: string
           participants?: string[]
           project_id?: string | null
+          reminder_at?: string | null
+          reminder_sent?: boolean
           start_at: string
           title: string
           updated_at?: string
@@ -137,6 +180,8 @@ export type Database = {
           id?: string
           participants?: string[]
           project_id?: string | null
+          reminder_at?: string | null
+          reminder_sent?: boolean
           start_at?: string
           title?: string
           updated_at?: string
@@ -214,10 +259,14 @@ export type Database = {
       customers: {
         Row: {
           assigned_to: string[]
+          color: string | null
           company: string
           created_at: string
           created_by: string | null
           email: string | null
+          follow_up_at: string | null
+          follow_up_note: string | null
+          follow_up_reason: string | null
           id: string
           name: string | null
           notes: string | null
@@ -227,10 +276,14 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string[]
+          color?: string | null
           company: string
           created_at?: string
           created_by?: string | null
           email?: string | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
+          follow_up_reason?: string | null
           id?: string
           name?: string | null
           notes?: string | null
@@ -240,10 +293,14 @@ export type Database = {
         }
         Update: {
           assigned_to?: string[]
+          color?: string | null
           company?: string
           created_at?: string
           created_by?: string | null
           email?: string | null
+          follow_up_at?: string | null
+          follow_up_note?: string | null
+          follow_up_reason?: string | null
           id?: string
           name?: string | null
           notes?: string | null
@@ -777,6 +834,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_notifications: { Args: never; Returns: undefined }
       dispatch_reminders: { Args: never; Returns: undefined }
       has_permission: {
         Args: { _perm: string; _uid: string }

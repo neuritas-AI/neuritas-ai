@@ -147,9 +147,7 @@ function SettingsPage() {
                 {members.map(m => (
                   <div key={m.id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-gradient-brand grid place-items-center text-white text-xs font-semibold">
-                        {(m.full_name ?? "??").slice(0,2).toUpperCase()}
-                      </div>
+                      <UserAvatar profile={m} size={36} />
                       <div>
                         <div className="font-medium text-sm">{m.full_name ?? "—"}</div>
                         <div className="flex gap-1 mt-0.5">

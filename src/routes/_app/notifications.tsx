@@ -73,6 +73,14 @@ function NotificationsPage() {
     await supabase.from("notifications").update({ read: true }).eq("read", false);
     toast.success("Alles gemarkeerd als gelezen");
   }
+  async function deleteOne(n: Notif) {
+    await supabase.from("notifications").delete().eq("id", n.id);
+  }
+  async function deleteAllRead() {
+    if (!confirm("Alle gelezen meldingen verwijderen?")) return;
+    await supabase.from("notifications").delete().eq("read", true);
+    toast.success("Gelezen meldingen verwijderd");
+  }
   async function openItem(n: Notif) {
     await markRead(n);
     if (n.link) navigate({ to: n.link as any });

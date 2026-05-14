@@ -99,7 +99,7 @@ function TasksPage() {
           <p className="text-muted-foreground text-sm mt-1">Beheer to-do's, prioriteiten en deadlines</p>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-          <DialogTrigger asChild><Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe taak</Button></DialogTrigger>
+          <span className="text-xs text-muted-foreground italic">Taken worden binnen een project aangemaakt.</span>
           <TaskDialog key={editing?.id ?? "new"} task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
         </Dialog>
       </div>

@@ -16,6 +16,8 @@ import { fmtDateTime, fmtDate, statusColor, statusLabel, priorityColor, priority
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { CustomerDialog } from "./index";
+import { CustomerStatusSelect } from "@/components/CustomerStatusSelect";
+import { customerAccent } from "@/lib/customer-colors";
 
 export const Route = createFileRoute("/_app/customers/$id")({ component: CustomerDetail });
 

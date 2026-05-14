@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
 import { TaskUpdates } from "@/components/TaskUpdates";
+import { UserAvatar, UserAvatarStack } from "@/components/UserAvatar";
 import { Hand } from "lucide-react";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
@@ -43,7 +44,7 @@ function TasksPage() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
       supabase.from("tasks").select("*, customers(name, company, color), projects(name)").order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);
     setTasks(t ?? []); setCustomers(c ?? []); setProfiles(p ?? []); setProjects(pr ?? []);
@@ -166,12 +167,8 @@ function TasksPage() {
                         )}
                       </div>
                       {assignees.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {assignees.map((a: any) => (
-                            <span key={a.id} className="text-[10px] bg-gradient-brand-soft text-primary px-1.5 py-0.5 rounded-full">
-                              {a.full_name ?? "—"}
-                            </span>
-                          ))}
+                        <div className="mt-2">
+                          <UserAvatarStack profiles={assignees as any[]} size={22} />
                         </div>
                       )}
                       {(() => {
@@ -181,6 +178,7 @@ function TasksPage() {
                           <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
                             {worker ? (
                               <span className="text-[10px] inline-flex items-center gap-1 text-success">
+                                <UserAvatar profile={worker} size={18} />
                                 <Hand className="h-3 w-3" /> Bezig: {worker.full_name ?? "—"}
                               </span>
                             ) : <span />}

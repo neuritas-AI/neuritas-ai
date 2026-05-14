@@ -32,7 +32,7 @@ function CustomersPage() {
   async function load() {
     const [{ data: c }, { data: p }] = await Promise.all([
       supabase.from("customers").select("*").order("updated_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
     setItems(c ?? []);
     setProfiles(p ?? []);

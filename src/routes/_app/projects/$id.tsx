@@ -43,7 +43,7 @@ function ProjectDetail() {
       supabase.from("tasks").select("*").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("appointments").select("*").eq("project_id", id).order("start_at", { ascending: false }),
       supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("customers").select("id, name"),
     ]);
     setProject(p); setCustomer(p?.customers ?? null);

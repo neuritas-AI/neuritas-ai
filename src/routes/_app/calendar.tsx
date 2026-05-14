@@ -48,7 +48,7 @@ function CalendarPage() {
       supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
-      supabase.from("profiles").select("id, full_name").order("full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url").order("full_name"),
       supabase.from("tasks").select("id,title,deadline,status,assignee_id,assignee_ids").not("deadline","is",null),
       supabase.from("appointment_types").select("*").order("sort_order"),
     ]);

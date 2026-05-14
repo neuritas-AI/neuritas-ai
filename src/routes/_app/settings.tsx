@@ -14,7 +14,8 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { toast } from "sonner";
-import { UserPlus, Shield, Trash2 } from "lucide-react";
+import { UserPlus, Shield, Trash2, Camera } from "lucide-react";
+import { UserAvatar } from "@/components/UserAvatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
 
@@ -25,6 +26,8 @@ function SettingsPage() {
   const { theme, toggle } = useTheme();
   const { isAdmin } = useRole();
   const [name, setName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
 
@@ -40,7 +43,10 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => setName(data?.full_name ?? ""));
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+      setName(data?.full_name ?? "");
+      setAvatarUrl(data?.avatar_url ?? null);
+    });
     loadMembers();
   }, [user]);
 
@@ -49,6 +55,26 @@ function SettingsPage() {
     if (error) return toast.error(error.message);
     toast.success("Opgeslagen");
   }
+
+  async function uploadAvatar(file: File) {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) return toast.error("Enkel afbeeldingen toegestaan");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Max 5MB");
+    setUploadingAvatar(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploadingAvatar(false); return toast.error(upErr.message); }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    const url = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+    setUploadingAvatar(false);
+    if (error) return toast.error(error.message);
+    setAvatarUrl(url);
+    toast.success("Profielfoto bijgewerkt");
+    loadMembers();
+  }
+
 
   async function changePassword() {
     const pw = prompt("Nieuw wachtwoord (min. 6 tekens):");
@@ -77,6 +103,16 @@ function SettingsPage() {
         <TabsContent value="profile" className="space-y-5 mt-5">
           <Card className="p-6 space-y-4">
             <h2 className="font-display font-semibold">Profielgegevens</h2>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <UserAvatar profile={{ full_name: name, avatar_url: avatarUrl }} size={72} />
+                <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-gradient-brand grid place-items-center text-white cursor-pointer shadow-soft" title="Foto wijzigen">
+                  <Camera className="h-3.5 w-3.5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); e.target.value = ""; }} />
+                </label>
+              </div>
+              <div className="text-xs text-muted-foreground">{uploadingAvatar ? "Uploaden…" : "Klik op het camera-icoon om je profielfoto te wijzigen (max 5MB)."}</div>
+            </div>
             <div><Label>Naam</Label><Input value={name} onChange={e=>setName(e.target.value)} /></div>
             <div><Label>E-mail</Label><Input value={email} disabled /></div>
             <div className="flex gap-2">
@@ -88,6 +124,7 @@ function SettingsPage() {
             <Button variant="destructive" onClick={signOut}>Uitloggen</Button>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="display" className="mt-5">
           <Card className="p-6 space-y-4">
@@ -110,9 +147,7 @@ function SettingsPage() {
                 {members.map(m => (
                   <div key={m.id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-gradient-brand grid place-items-center text-white text-xs font-semibold">
-                        {(m.full_name ?? "??").slice(0,2).toUpperCase()}
-                      </div>
+                      <UserAvatar profile={m} size={36} />
                       <div>
                         <div className="font-medium text-sm">{m.full_name ?? "—"}</div>
                         <div className="flex gap-1 mt-0.5">

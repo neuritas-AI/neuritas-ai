@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Calendar as CalIcon, User as UserIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Pencil, Trash2, Calendar as CalIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { fmtDate } from "@/lib/format";
+import { UserAvatar } from "@/components/UserAvatar";
 import { toast } from "sonner";
 
 type Meeting = {
@@ -29,7 +30,7 @@ type Appt = { id: string; title: string; start_at: string };
 
 const MEETING_TYPE_LABEL: Record<string, string> = { first: "Eerste meeting", follow_up: "Vervolg meeting" };
 
-export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null }> }) {
+export function MeetingsTab({ projectId, userId, profiles }: { projectId: string; userId: string | null; profiles: Array<{ id: string; full_name: string | null; avatar_url?: string | null }> }) {
   const [items, setItems] = useState<Meeting[]>([]);
   const [appts, setAppts] = useState<Appt[]>([]);
   const [open, setOpen] = useState<Meeting | null | false>(false);
@@ -99,8 +100,8 @@ export function MeetingsTab({ projectId, userId, profiles }: { projectId: string
                       {MEETING_TYPE_LABEL[m.meeting_type] ?? m.meeting_type}
                     </span>
                   </div>
-                  <div className="text-xs text-muted-foreground inline-flex items-center gap-1 mt-0.5">
-                    <UserIcon className="h-3 w-3" /> {nameFor(m.conducted_by)}
+                  <div className="text-xs text-muted-foreground inline-flex items-center gap-1.5 mt-1">
+                    <UserAvatar profile={profiles.find(p => p.id === m.conducted_by) ?? { full_name: nameFor(m.conducted_by) }} size={20} /> {nameFor(m.conducted_by)}
                   </div>
                   {!isOpen && m.discussed && (
                     <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{m.discussed}</div>

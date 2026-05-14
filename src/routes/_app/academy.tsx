@@ -28,7 +28,7 @@ function AcademyPage() {
   async function load() {
     const [{ data }, { data: pr }] = await Promise.all([
       supabase.from("ai_academy_items" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("id, full_name"),
+      supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
     setItems((data as any[]) ?? []);
     setProfiles(pr ?? []);

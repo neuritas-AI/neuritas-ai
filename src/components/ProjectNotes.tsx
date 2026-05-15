@@ -9,6 +9,7 @@ import { nl } from "date-fns/locale";
 import { Trash2, StickyNote, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
+import { useProfile } from "@/lib/profiles";
 
 type Note = { id: string; user_id: string; content: string; created_at: string };
 

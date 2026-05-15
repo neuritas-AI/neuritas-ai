@@ -209,6 +209,11 @@ function ProjectDetail() {
           </TabsContent>
         )}
       </Tabs>
+        </div>
+        <aside className="lg:sticky lg:top-20">
+          <ProjectNotes projectId={id} />
+        </aside>
+      </div>
     </div>
   );
 }

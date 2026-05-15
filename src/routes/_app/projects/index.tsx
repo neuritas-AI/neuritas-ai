@@ -47,6 +47,7 @@ function ProjectsPage() {
 
   const filtered = items.filter(p =>
     (statusFilter === "all" || p.status === statusFilter) &&
+    (typeFilter === "all" || (typeFilter === "internal" ? isInternalProject(p) : !isInternalProject(p))) &&
     (!search || p.name.toLowerCase().includes(search.toLowerCase()) || customerLabel(p.customers).toLowerCase().includes(search.toLowerCase()))
   );
 

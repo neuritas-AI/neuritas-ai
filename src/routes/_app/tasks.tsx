@@ -19,7 +19,8 @@ import { useRole } from "@/lib/role";
 import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
 import { TaskUpdates } from "@/components/TaskUpdates";
 import { UserAvatar, UserAvatarStack } from "@/components/UserAvatar";
-import { Hand } from "lucide-react";
+import { Hand, Building2 } from "lucide-react";
+import { isInternalProject, INTERNAL_PURPLE, internalBadgeClass } from "@/lib/project-style";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
 
@@ -42,7 +43,7 @@ function TasksPage() {
   const [projects, setProjects] = useState<any[]>([]);
   async function load() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name, company, color), projects(name)").order("created_at", { ascending: false }),
+      supabase.from("tasks").select("*, customers(name, company, color), projects(name, is_internal)").order("created_at", { ascending: false }),
       supabase.from("customers").select("id, name, company").order("company"),
       supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
@@ -152,12 +153,18 @@ function TasksPage() {
                 <div className="space-y-2">
                   {filtered.filter(t => t.status === s).map(t => {
                     const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
+                    const tInternal = isInternalProject(t.projects);
+                    const accent = tInternal ? INTERNAL_PURPLE : (t.customers?.color || "transparent");
                     return (
-                    <div key={t.id} className={`p-3 rounded-lg border bg-card hover:shadow-soft transition-all cursor-pointer border-l-4 ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
-                      style={{ borderLeftColor: t.customers?.color || "transparent" }}
+                    <div key={t.id} className={`p-3 rounded-lg border hover:shadow-soft transition-all cursor-pointer border-l-4 ${tInternal ? "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-900" : "bg-card"} ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
+                      style={{ borderLeftColor: accent }}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
-                      <div className="font-medium text-sm">{t.title}</div>
-                      {t.customers && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="font-medium text-sm">{t.title}</div>
+                        {tInternal && <Badge className={internalBadgeClass + " text-[9px] py-0 px-1.5 shrink-0"}><Building2 className="h-2.5 w-2.5 mr-0.5" />Intern</Badge>}
+                      </div>
+                      {t.customers && !tInternal && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}
+                      {tInternal && t.projects?.name && <div className="text-xs text-violet-700/80 dark:text-violet-300/80 mt-0.5">{t.projects.name}</div>}
                       <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
                         <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
                         {t.deadline && (

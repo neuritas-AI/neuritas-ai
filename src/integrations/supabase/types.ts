@@ -575,9 +575,10 @@ export type Database = {
           assigned_to: string[]
           created_at: string
           created_by: string | null
-          customer_id: string
+          customer_id: string | null
           description: string | null
           id: string
+          is_internal: boolean
           name: string
           status: Database["public"]["Enums"]["project_status"]
           status_reason: string | null
@@ -587,9 +588,10 @@ export type Database = {
           assigned_to?: string[]
           created_at?: string
           created_by?: string | null
-          customer_id: string
+          customer_id?: string | null
           description?: string | null
           id?: string
+          is_internal?: boolean
           name: string
           status?: Database["public"]["Enums"]["project_status"]
           status_reason?: string | null
@@ -599,9 +601,10 @@ export type Database = {
           assigned_to?: string[]
           created_at?: string
           created_by?: string | null
-          customer_id?: string
+          customer_id?: string | null
           description?: string | null
           id?: string
+          is_internal?: boolean
           name?: string
           status?: Database["public"]["Enums"]["project_status"]
           status_reason?: string | null

@@ -9,11 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronRight, FolderKanban } from "lucide-react";
+import { Plus, ChevronRight, FolderKanban, Building2, Users2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { customerLabel } from "@/lib/customer-label";
 import { PROJECT_STATUSES, PROJECT_STATUS_REQUIRES_REASON, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
+import { isInternalProject, projectAccent, internalCardClass, internalIconWrapClass, internalBadgeClass } from "@/lib/project-style";
+import { cn } from "@/lib/utils";
 
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
 
@@ -26,6 +28,7 @@ function ProjectsPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all"|"customer"|"internal">("all");
   const [open, setOpen] = useState(false);
 
   async function load() {
@@ -44,6 +47,7 @@ function ProjectsPage() {
 
   const filtered = items.filter(p =>
     (statusFilter === "all" || p.status === statusFilter) &&
+    (typeFilter === "all" || (typeFilter === "internal" ? isInternalProject(p) : !isInternalProject(p))) &&
     (!search || p.name.toLowerCase().includes(search.toLowerCase()) || customerLabel(p.customers).toLowerCase().includes(search.toLowerCase()))
   );
 
@@ -62,6 +66,14 @@ function ProjectsPage() {
 
       <Card className="p-4 flex gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft">
         <Input placeholder="Zoek op naam of klant…" value={search} onChange={e=>setSearch(e.target.value)} className="max-w-sm" />
+        <Select value={typeFilter} onValueChange={(v)=>setTypeFilter(v as any)}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle projecten</SelectItem>
+            <SelectItem value="customer">Klantprojecten</SelectItem>
+            <SelectItem value="internal">Interne projecten</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -74,17 +86,27 @@ function ProjectsPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen projecten</Card>}
-        {filtered.map(p => (
-          <Card key={p.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4" style={{ borderLeftColor: p.customers?.color || "transparent" }}>
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
+        {filtered.map(p => {
+          const internal = isInternalProject(p);
+          return (
+          <Card key={p.id} className={cn(
+            "p-5 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4",
+            internal ? internalCardClass + " hover:border-violet-400" : "hover:border-primary/40",
+          )} style={{ borderLeftColor: projectAccent(p) }}>
+            <div className={cn("absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity", internal ? "bg-violet-500" : "bg-gradient-brand")} />
             <Link to="/projects/$id" params={{ id: p.id }} className="flex items-start gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center shrink-0">
-                <FolderKanban className="h-5 w-5" />
+              <div className={cn("h-11 w-11 rounded-xl grid place-items-center shrink-0", internal ? internalIconWrapClass : "bg-gradient-brand-soft text-primary")}>
+                {internal ? <Building2 className="h-5 w-5" /> : <FolderKanban className="h-5 w-5" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-display font-semibold truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
-                {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className={cn("font-display font-semibold truncate", internal && "text-violet-900 dark:text-violet-100")}>{p.name}</div>
+                  {internal && <Badge className={internalBadgeClass + " text-[10px] py-0"}>Intern</Badge>}
+                </div>
+                <div className={cn("text-xs truncate", internal ? "text-violet-700/80 dark:text-violet-300/80" : "text-muted-foreground")}>
+                  {internal ? <span className="inline-flex items-center gap-1"><Users2 className="h-3 w-3" /> Interne samenwerking</span> : customerLabel(p.customers)}
+                </div>
+                {p.description && <p className={cn("text-xs mt-1 line-clamp-2", internal ? "text-violet-700/70 dark:text-violet-300/70" : "text-muted-foreground")}>{p.description}</p>}
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
@@ -97,7 +119,7 @@ function ProjectsPage() {
               )}
             </div>
           </Card>
-        ))}
+        );})}
       </div>
     </div>
   );
@@ -106,6 +128,7 @@ function ProjectsPage() {
 export function ProjectDialog({ userId, customers, profiles, onClose, project, defaultCustomerId }: any) {
   const [form, setForm] = useState({
     name: project?.name ?? "",
+    is_internal: project?.is_internal ?? false,
     customer_id: project?.customer_id ?? defaultCustomerId ?? "",
     status: project?.status ?? "planned",
     status_reason: project?.status_reason ?? "",
@@ -117,10 +140,14 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
   }
   async function save() {
     if (!form.name.trim()) return toast.error("Naam verplicht");
-    if (!form.customer_id) return toast.error("Klant verplicht");
+    if (!form.is_internal && !form.customer_id) return toast.error("Klant verplicht voor klantprojecten");
     const requiresReason = PROJECT_STATUS_REQUIRES_REASON.has(form.status);
     if (requiresReason && !form.status_reason.trim()) return toast.error("Reden verplicht voor deze status");
-    const cleaned = { ...form, status_reason: requiresReason ? form.status_reason.trim() : null };
+    const cleaned = {
+      ...form,
+      customer_id: form.is_internal ? null : form.customer_id,
+      status_reason: requiresReason ? form.status_reason.trim() : null,
+    };
     const payload = { ...cleaned, ...(project ? {} : { created_by: userId }) };
     const { error } = project
       ? await supabase.from("projects").update(payload).eq("id", project.id)
@@ -132,13 +159,30 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{project?"Project bewerken":"Nieuw project"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
-        <div><Label>Klant *</Label>
-          <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
-            <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
-          </Select>
+        <div>
+          <Label>Type project</Label>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            <button type="button" onClick={()=>setForm({...form, is_internal: false})}
+              className={cn("p-3 rounded-lg border text-left transition-all", !form.is_internal ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/40")}>
+              <div className="font-medium text-sm">Klantproject</div>
+              <div className="text-xs text-muted-foreground">Werk voor een klant</div>
+            </button>
+            <button type="button" onClick={()=>setForm({...form, is_internal: true})}
+              className={cn("p-3 rounded-lg border text-left transition-all", form.is_internal ? "border-violet-500 bg-violet-50 dark:bg-violet-950/40 shadow-soft" : "border-border hover:border-violet-400")}>
+              <div className="font-medium text-sm flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> Intern project</div>
+              <div className="text-xs text-muted-foreground">Interne samenwerking</div>
+            </button>
+          </div>
         </div>
+        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
+        {!form.is_internal && (
+          <div><Label>Klant *</Label>
+            <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
+              <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
+              <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        )}
         <div><Label>Status</Label>
           <Select value={form.status} onValueChange={v=>setForm({...form,status:v})}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -168,7 +212,7 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
           </div>
         )}
       </div>
-      <DialogFooter><Button variant="ghost" onClick={onClose}>Annuleren</Button><Button onClick={save} className="bg-gradient-brand border-0">Opslaan</Button></DialogFooter>
+      <DialogFooter><Button variant="ghost" onClick={onClose}>Annuleren</Button><Button onClick={save} className={cn("border-0", form.is_internal ? "bg-violet-600 hover:bg-violet-700" : "bg-gradient-brand")}>Opslaan</Button></DialogFooter>
     </DialogContent>
   );
 }

@@ -128,6 +128,7 @@ function ProjectsPage() {
 export function ProjectDialog({ userId, customers, profiles, onClose, project, defaultCustomerId }: any) {
   const [form, setForm] = useState({
     name: project?.name ?? "",
+    is_internal: project?.is_internal ?? false,
     customer_id: project?.customer_id ?? defaultCustomerId ?? "",
     status: project?.status ?? "planned",
     status_reason: project?.status_reason ?? "",
@@ -139,10 +140,14 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
   }
   async function save() {
     if (!form.name.trim()) return toast.error("Naam verplicht");
-    if (!form.customer_id) return toast.error("Klant verplicht");
+    if (!form.is_internal && !form.customer_id) return toast.error("Klant verplicht voor klantprojecten");
     const requiresReason = PROJECT_STATUS_REQUIRES_REASON.has(form.status);
     if (requiresReason && !form.status_reason.trim()) return toast.error("Reden verplicht voor deze status");
-    const cleaned = { ...form, status_reason: requiresReason ? form.status_reason.trim() : null };
+    const cleaned = {
+      ...form,
+      customer_id: form.is_internal ? null : form.customer_id,
+      status_reason: requiresReason ? form.status_reason.trim() : null,
+    };
     const payload = { ...cleaned, ...(project ? {} : { created_by: userId }) };
     const { error } = project
       ? await supabase.from("projects").update(payload).eq("id", project.id)
@@ -154,13 +159,30 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{project?"Project bewerken":"Nieuw project"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
-        <div><Label>Klant *</Label>
-          <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
-            <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
-            <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
-          </Select>
+        <div>
+          <Label>Type project</Label>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            <button type="button" onClick={()=>setForm({...form, is_internal: false})}
+              className={cn("p-3 rounded-lg border text-left transition-all", !form.is_internal ? "border-primary bg-primary/5 shadow-soft" : "border-border hover:border-primary/40")}>
+              <div className="font-medium text-sm">Klantproject</div>
+              <div className="text-xs text-muted-foreground">Werk voor een klant</div>
+            </button>
+            <button type="button" onClick={()=>setForm({...form, is_internal: true})}
+              className={cn("p-3 rounded-lg border text-left transition-all", form.is_internal ? "border-violet-500 bg-violet-50 dark:bg-violet-950/40 shadow-soft" : "border-border hover:border-violet-400")}>
+              <div className="font-medium text-sm flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> Intern project</div>
+              <div className="text-xs text-muted-foreground">Interne samenwerking</div>
+            </button>
+          </div>
         </div>
+        <div><Label>Naam *</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} /></div>
+        {!form.is_internal && (
+          <div><Label>Klant *</Label>
+            <Select value={form.customer_id} onValueChange={v=>setForm({...form,customer_id:v})}>
+              <SelectTrigger><SelectValue placeholder="Selecteer klant…" /></SelectTrigger>
+              <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        )}
         <div><Label>Status</Label>
           <Select value={form.status} onValueChange={v=>setForm({...form,status:v})}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -190,7 +212,7 @@ export function ProjectDialog({ userId, customers, profiles, onClose, project, d
           </div>
         )}
       </div>
-      <DialogFooter><Button variant="ghost" onClick={onClose}>Annuleren</Button><Button onClick={save} className="bg-gradient-brand border-0">Opslaan</Button></DialogFooter>
+      <DialogFooter><Button variant="ghost" onClick={onClose}>Annuleren</Button><Button onClick={save} className={cn("border-0", form.is_internal ? "bg-violet-600 hover:bg-violet-700" : "bg-gradient-brand")}>Opslaan</Button></DialogFooter>
     </DialogContent>
   );
 }

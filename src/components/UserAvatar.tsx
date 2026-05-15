@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useProfile } from "@/lib/profiles";
 
 export type AvatarProfile = { id?: string; full_name?: string | null; avatar_url?: string | null };
 
@@ -11,19 +12,26 @@ function initials(name?: string | null) {
 
 export function UserAvatar({
   profile,
+  userId,
   className,
   size = 32,
 }: {
   profile?: AvatarProfile | null;
+  userId?: string | null;
   className?: string;
   size?: number;
 }) {
+  // Always prefer live profile from global cache when an id is available
+  const lookupId = userId ?? profile?.id ?? null;
+  const live = useProfile(lookupId);
+  const effective: AvatarProfile | null | undefined = live ?? profile;
+
   const style = { width: size, height: size };
   return (
     <Avatar className={cn("shrink-0", className)} style={style}>
-      {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.full_name ?? ""} /> : null}
+      {effective?.avatar_url ? <AvatarImage src={effective.avatar_url} alt={effective.full_name ?? ""} /> : null}
       <AvatarFallback className="bg-gradient-brand text-white text-[11px] font-semibold">
-        {initials(profile?.full_name)}
+        {initials(effective?.full_name)}
       </AvatarFallback>
     </Avatar>
   );
@@ -35,7 +43,7 @@ export function UserAvatarStack({ profiles, max = 4, size = 28 }: { profiles: Av
   return (
     <div className="flex -space-x-2">
       {shown.map((p, i) => (
-        <UserAvatar key={p.id ?? i} profile={p} size={size} className="ring-2 ring-background" />
+        <UserAvatar key={p.id ?? i} profile={p} userId={p.id} size={size} className="ring-2 ring-background" />
       ))}
       {extra > 0 && (
         <div

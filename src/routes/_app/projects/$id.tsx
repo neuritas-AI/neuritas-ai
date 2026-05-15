@@ -18,6 +18,7 @@ import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { TaskDialog } from "@/components/TaskDialog";
+import { ProjectNotes } from "@/components/ProjectNotes";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 
@@ -66,8 +67,11 @@ function ProjectDetail() {
     .join(", ");
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 max-w-[1600px]">
       <Link to="/projects" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Terug naar projecten</Link>
+
+      <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
+        <div className="space-y-6 min-w-0">
 
       <Card className="overflow-hidden border-0 shadow-soft">
         <div className="bg-gradient-brand-soft p-6 md:p-8">
@@ -205,6 +209,11 @@ function ProjectDetail() {
           </TabsContent>
         )}
       </Tabs>
+        </div>
+        <aside className="lg:sticky lg:top-20">
+          <ProjectNotes projectId={id} />
+        </aside>
+      </div>
     </div>
   );
 }

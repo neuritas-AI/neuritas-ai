@@ -17,8 +17,13 @@ import { nl } from "date-fns/locale";
 import { Logo } from "@/components/Logo";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { QuickActionsFab } from "@/components/QuickActionsFab";
+import { ProfilesProvider } from "@/lib/profiles";
 
-export const Route = createFileRoute("/_app")({ component: AppLayout });
+export const Route = createFileRoute("/_app")({ component: AppLayoutWrapped });
+
+function AppLayoutWrapped() {
+  return <ProfilesProvider><AppLayout /></ProfilesProvider>;
+}
 
 const baseNav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, perm: null },

@@ -9,11 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronRight, FolderKanban } from "lucide-react";
+import { Plus, ChevronRight, FolderKanban, Building2, Users2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { customerLabel } from "@/lib/customer-label";
 import { PROJECT_STATUSES, PROJECT_STATUS_REQUIRES_REASON, projectStatusColor, projectStatusLabel } from "@/lib/billing-format";
+import { isInternalProject, projectAccent, internalCardClass, internalIconWrapClass, internalBadgeClass } from "@/lib/project-style";
+import { cn } from "@/lib/utils";
 
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
 

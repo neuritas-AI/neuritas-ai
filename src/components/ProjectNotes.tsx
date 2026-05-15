@@ -136,10 +136,7 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
 }
 
 function NoteAuthor({ userId }: { userId: string }) {
-  const p = useProfileSafe(userId);
+  const p = useProfile(userId);
   return <div className="text-xs font-medium truncate">{p?.full_name ?? "Iemand"}</div>;
 }
 
-// local helper to avoid additional imports churn
-import { useProfile } from "@/lib/profiles";
-function useProfileSafe(id: string) { return useProfile(id); }

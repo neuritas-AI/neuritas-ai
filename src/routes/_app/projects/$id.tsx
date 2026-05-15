@@ -19,6 +19,9 @@ import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
+import { isInternalProject, internalHeaderClass, internalBadgeClass, internalIconWrapClass } from "@/lib/project-style";
+import { Building2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 

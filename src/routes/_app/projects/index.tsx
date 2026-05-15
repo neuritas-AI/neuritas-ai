@@ -28,6 +28,7 @@ function ProjectsPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState<"all"|"customer"|"internal">("all");
   const [open, setOpen] = useState(false);
 
   async function load() {

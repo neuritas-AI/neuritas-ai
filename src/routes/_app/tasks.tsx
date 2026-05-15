@@ -19,7 +19,8 @@ import { useRole } from "@/lib/role";
 import { startOfWeek, endOfWeek, isSameDay, isWithinInterval } from "date-fns";
 import { TaskUpdates } from "@/components/TaskUpdates";
 import { UserAvatar, UserAvatarStack } from "@/components/UserAvatar";
-import { Hand } from "lucide-react";
+import { Hand, Building2 } from "lucide-react";
+import { isInternalProject, INTERNAL_PURPLE, internalBadgeClass } from "@/lib/project-style";
 
 export const Route = createFileRoute("/_app/tasks")({ component: TasksPage });
 

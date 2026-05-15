@@ -18,6 +18,7 @@ import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { TaskDialog } from "@/components/TaskDialog";
+import { ProjectNotes } from "@/components/ProjectNotes";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 

@@ -77,12 +77,16 @@ function ProjectDetail() {
       <div className="grid lg:grid-cols-[1fr_320px] gap-6 items-start">
         <div className="space-y-6 min-w-0">
 
-      <Card className="overflow-hidden border-0 shadow-soft">
-        <div className="bg-gradient-brand-soft p-6 md:p-8">
+      <Card className={cn("overflow-hidden border-0 shadow-soft", internal && "ring-1 ring-violet-300 dark:ring-violet-800")}>
+        <div className={cn("p-6 md:p-8", internal ? internalHeaderClass : "bg-gradient-brand-soft")}>
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-3xl font-display font-semibold">{project.name}</h1>
-              {customer && (
+              <div className="flex items-center gap-2 flex-wrap">
+                {internal && <span className={cn("h-9 w-9 rounded-xl grid place-items-center", internalIconWrapClass)}><Building2 className="h-5 w-5" /></span>}
+                <h1 className={cn("text-3xl font-display font-semibold", internal && "text-violet-900 dark:text-violet-100")}>{project.name}</h1>
+                {internal && <Badge className={internalBadgeClass}>Intern project</Badge>}
+              </div>
+              {customer && !internal && (
                 <Link to="/customers/$id" params={{ id: customer.id }} className="text-sm text-primary hover:underline mt-1 inline-block">
                   {customer.company || customer.name}
                 </Link>

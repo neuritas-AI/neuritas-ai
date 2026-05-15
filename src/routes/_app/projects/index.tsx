@@ -86,17 +86,27 @@ function ProjectsPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen projecten</Card>}
-        {filtered.map(p => (
-          <Card key={p.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4" style={{ borderLeftColor: p.customers?.color || "transparent" }}>
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-brand opacity-0 group-hover:opacity-100 transition-opacity" />
+        {filtered.map(p => {
+          const internal = isInternalProject(p);
+          return (
+          <Card key={p.id} className={cn(
+            "p-5 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4",
+            internal ? internalCardClass + " hover:border-violet-400" : "hover:border-primary/40",
+          )} style={{ borderLeftColor: projectAccent(p) }}>
+            <div className={cn("absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity", internal ? "bg-violet-500" : "bg-gradient-brand")} />
             <Link to="/projects/$id" params={{ id: p.id }} className="flex items-start gap-3">
-              <div className="h-11 w-11 rounded-xl bg-gradient-brand-soft text-primary grid place-items-center shrink-0">
-                <FolderKanban className="h-5 w-5" />
+              <div className={cn("h-11 w-11 rounded-xl grid place-items-center shrink-0", internal ? internalIconWrapClass : "bg-gradient-brand-soft text-primary")}>
+                {internal ? <Building2 className="h-5 w-5" /> : <FolderKanban className="h-5 w-5" />}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-display font-semibold truncate">{p.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{customerLabel(p.customers)}</div>
-                {p.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className={cn("font-display font-semibold truncate", internal && "text-violet-900 dark:text-violet-100")}>{p.name}</div>
+                  {internal && <Badge className={internalBadgeClass + " text-[10px] py-0"}>Intern</Badge>}
+                </div>
+                <div className={cn("text-xs truncate", internal ? "text-violet-700/80 dark:text-violet-300/80" : "text-muted-foreground")}>
+                  {internal ? <span className="inline-flex items-center gap-1"><Users2 className="h-3 w-3" /> Interne samenwerking</span> : customerLabel(p.customers)}
+                </div>
+                {p.description && <p className={cn("text-xs mt-1 line-clamp-2", internal ? "text-violet-700/70 dark:text-violet-300/70" : "text-muted-foreground")}>{p.description}</p>}
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
@@ -109,7 +119,7 @@ function ProjectsPage() {
               )}
             </div>
           </Card>
-        ))}
+        );})}
       </div>
     </div>
   );

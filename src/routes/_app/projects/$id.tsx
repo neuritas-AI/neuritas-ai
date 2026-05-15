@@ -64,6 +64,7 @@ function ProjectDetail() {
   }, [id, perms.can_view_invoices, perms.can_edit_invoices]);
 
   if (!project) return <div className="text-muted-foreground">Laden…</div>;
+  const internal = isInternalProject(project);
 
   const assignedNames = (project.assigned_to ?? [])
     .map((uid: string) => profiles.find(p => p.id === uid)?.full_name ?? "Onbekend")

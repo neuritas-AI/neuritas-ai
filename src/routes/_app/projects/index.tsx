@@ -66,6 +66,14 @@ function ProjectsPage() {
 
       <Card className="p-4 flex gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft">
         <Input placeholder="Zoek op naam of klant…" value={search} onChange={e=>setSearch(e.target.value)} className="max-w-sm" />
+        <Select value={typeFilter} onValueChange={(v)=>setTypeFilter(v as any)}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Alle projecten</SelectItem>
+            <SelectItem value="customer">Klantprojecten</SelectItem>
+            <SelectItem value="internal">Interne projecten</SelectItem>
+          </SelectContent>
+        </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>

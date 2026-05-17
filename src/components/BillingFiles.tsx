@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload, Download, Trash2, FileText } from "lucide-react";
+import { Upload, Download, Trash2, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDateTime } from "@/lib/format";
+import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 
 export function BillingFiles({ kind, parentId, customerId, userId }: {
   kind: "quote" | "invoice";
@@ -13,6 +14,7 @@ export function BillingFiles({ kind, parentId, customerId, userId }: {
   userId: string | null;
 }) {
   const [files, setFiles] = useState<any[]>([]);
+  const [preview, setPreview] = useState<any | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const col = kind === "quote" ? "quote_id" : "invoice_id";
 
@@ -66,16 +68,20 @@ export function BillingFiles({ kind, parentId, customerId, userId }: {
       <div className="space-y-1">
         {files.map(f => (
           <div key={f.id} className="flex items-center gap-2 p-2 rounded border text-sm">
-            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="truncate font-medium">{f.name}</div>
-              <div className="text-[10px] text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
-            </div>
-            <Button size="sm" variant="ghost" onClick={() => download(f)}><Download className="h-3.5 w-3.5" /></Button>
-            <Button size="sm" variant="ghost" onClick={() => del(f)} className="text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+            <button type="button" onClick={() => setPreview(f)} className="flex items-center gap-2 flex-1 min-w-0 text-left hover:text-primary">
+              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="truncate font-medium">{f.name}</div>
+                <div className="text-[10px] text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
+              </div>
+            </button>
+            <Button size="sm" variant="ghost" onClick={() => setPreview(f)} title="Bekijk"><Eye className="h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => download(f)} title="Download"><Download className="h-3.5 w-3.5" /></Button>
+            <Button size="sm" variant="ghost" onClick={() => del(f)} className="text-destructive" title="Verwijder"><Trash2 className="h-3.5 w-3.5" /></Button>
           </div>
         ))}
       </div>
+      <FilePreviewDialog file={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }

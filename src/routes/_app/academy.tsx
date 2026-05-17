@@ -88,7 +88,7 @@ function AcademyPage() {
               <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
                 {i.storage_path && (
                   <Button size="sm" variant="outline" onClick={() => setPreview({ id: i.id, name: i.file_name, storage_path: i.storage_path, mime_type: i.file_mime })}>
-                    <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk PDF
+                    <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk bestand
                   </Button>
                 )}
                 {i.link && (
@@ -151,8 +151,8 @@ function ItemDialog({ userId, onClose }: { userId: string | null; onClose: () =>
         <div><Label>Waarom is dit belangrijk?</Label><Textarea rows={3} value={form.importance} onChange={e => setForm({ ...form, importance: e.target.value })} placeholder="Wat moet je team hiervan onthouden?" /></div>
         <div><Label>Link (optioneel)</Label><Input type="url" value={form.link} onChange={e => setForm({ ...form, link: e.target.value })} placeholder="https://…" /></div>
         <div>
-          <Label>PDF / bestand (optioneel)</Label>
-          <input ref={inputRef} type="file" accept="application/pdf,image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} className="block text-sm mt-1" />
+          <Label>Bestand (optioneel)</Label>
+          <input ref={inputRef} type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="block text-sm mt-1" />
           {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {(file.size / 1024).toFixed(1)} KB</p>}
         </div>
       </div>

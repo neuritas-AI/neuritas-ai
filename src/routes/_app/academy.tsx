@@ -88,7 +88,7 @@ function AcademyPage() {
               <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
                 {i.storage_path && (
                   <Button size="sm" variant="outline" onClick={() => setPreview({ id: i.id, name: i.file_name, storage_path: i.storage_path, mime_type: i.file_mime })}>
-                    <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk PDF
+                    <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk bestand
                   </Button>
                 )}
                 {i.link && (

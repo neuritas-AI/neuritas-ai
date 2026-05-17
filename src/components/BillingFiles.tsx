@@ -14,6 +14,7 @@ export function BillingFiles({ kind, parentId, customerId, userId }: {
   userId: string | null;
 }) {
   const [files, setFiles] = useState<any[]>([]);
+  const [preview, setPreview] = useState<any | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const col = kind === "quote" ? "quote_id" : "invoice_id";
 

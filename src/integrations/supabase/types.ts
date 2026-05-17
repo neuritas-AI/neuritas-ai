@@ -778,6 +778,21 @@ export type Database = {
           },
         ]
       }
+      user_activity: {
+        Row: {
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_permissions: {
         Row: {
           can_edit_customers: boolean
@@ -875,6 +890,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _uid: string }; Returns: boolean }
+      touch_activity: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "employee"

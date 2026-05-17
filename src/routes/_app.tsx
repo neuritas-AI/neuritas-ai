@@ -18,11 +18,17 @@ import { Logo } from "@/components/Logo";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { QuickActionsFab } from "@/components/QuickActionsFab";
 import { ProfilesProvider } from "@/lib/profiles";
+import { useActivityPing } from "@/lib/use-activity-ping";
 
 export const Route = createFileRoute("/_app")({ component: AppLayoutWrapped });
 
 function AppLayoutWrapped() {
   return <ProfilesProvider><AppLayout /></ProfilesProvider>;
+}
+
+function ActivityPinger() {
+  useActivityPing();
+  return null;
 }
 
 const baseNav = [
@@ -136,6 +142,7 @@ function AppLayout() {
         </header>
         <div className="p-3 sm:p-4 md:p-8 max-w-[1600px] mx-auto"><Outlet /></div>
         <QuickActionsFab />
+        <ActivityPinger />
       </main>
     </div>
   );

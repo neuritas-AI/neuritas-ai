@@ -18,6 +18,18 @@ import { UserPlus, Shield, Trash2, Camera } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
+import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
+import { nl } from "date-fns/locale";
+
+function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 60_000) return "zojuist";
+  if (diffMs < 60 * 60_000) return formatDistanceToNow(d, { addSuffix: true, locale: nl });
+  if (isToday(d)) return `vandaag om ${format(d, "HH:mm")}`;
+  if (isYesterday(d)) return `gisteren om ${format(d, "HH:mm")}`;
+  return format(d, "dd-MM-yyyy 'om' HH:mm");
+}
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 
@@ -30,6 +42,8 @@ function SettingsPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
+  const [activity, setActivity] = useState<Record<string, string>>({});
+  const canSeeActivity = (user?.email ?? "").toLowerCase() === "tijs.peetermans@neuritas-ai.com";
 
   async function loadMembers() {
     const [{ data: profiles }, { data: roles }] = await Promise.all([
@@ -39,6 +53,12 @@ function SettingsPage() {
     const byUser: Record<string, string[]> = {};
     (roles ?? []).forEach((r: any) => { (byUser[r.user_id] ||= []).push(r.role); });
     setMembers((profiles ?? []).map((p: any) => ({ ...p, roles: byUser[p.id] ?? [] })));
+    if (canSeeActivity) {
+      const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
+      const map: Record<string, string> = {};
+      (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
+      setActivity(map);
+    }
   }
 
   useEffect(() => {
@@ -149,13 +169,27 @@ function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <UserAvatar profile={m} size={36} />
                       <div>
-                        <div className="font-medium text-sm">{m.full_name ?? "—"}</div>
-                        <div className="flex gap-1 mt-0.5">
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {m.full_name ?? "—"}
+                          {canSeeActivity && activity[m.id] && (Date.now() - new Date(activity[m.id]).getTime() < 2 * 60_000) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Nu online
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1 mt-0.5 items-center">
                           {m.roles.map((r: string) => (
                             <Badge key={r} variant="outline" className={`text-[10px] ${r==="admin"?"border-primary/40 text-primary":""}`}>
                               {r === "admin" ? "Admin" : "Werknemer"}
                             </Badge>
                           ))}
+                          {canSeeActivity && (
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              {activity[m.id]
+                                ? `Laatst actief: ${formatLastSeen(activity[m.id])}`
+                                : "Nog niet actief"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

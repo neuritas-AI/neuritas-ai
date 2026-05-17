@@ -13,16 +13,31 @@ export function FilePreviewDialog({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [textContent, setTextContent] = useState<string | null>(null);
 
   useEffect(() => {
     setUrl(null);
+    setTextContent(null);
     if (!file) return;
     let cancelled = false;
     (async () => {
-      const { data, error } = await supabase.storage.from("files").createSignedUrl(file.storage_path, 600);
-      if (!cancelled) {
-        if (error || !data) toast.error(error?.message ?? "Kon bestand niet laden");
-        else setUrl(data.signedUrl);
+      const { data, error } = await supabase.storage.from("files").createSignedUrl(file.storage_path, 3600);
+      if (cancelled) return;
+      if (error || !data) { toast.error(error?.message ?? "Kon bestand niet laden"); return; }
+      setUrl(data.signedUrl);
+      // For small text-ish files, fetch and render inline
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      const mime = (file.mime_type ?? "").toLowerCase();
+      const isText =
+        mime.startsWith("text/") ||
+        ["txt", "csv", "json", "md", "log", "xml", "yaml", "yml"].includes(ext) ||
+        mime === "application/json";
+      if (isText) {
+        try {
+          const res = await fetch(data.signedUrl);
+          const txt = await res.text();
+          if (!cancelled) setTextContent(txt.slice(0, 200_000));
+        } catch { /* ignore */ }
       }
     })();
     return () => { cancelled = true; };
@@ -31,16 +46,30 @@ export function FilePreviewDialog({
   if (!file) return null;
   const mime = (file.mime_type ?? "").toLowerCase();
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  const isImage = mime.startsWith("image/") || ["png","jpg","jpeg","gif","webp","svg","avif"].includes(ext);
+
+  const isImage = mime.startsWith("image/") || ["png","jpg","jpeg","gif","webp","svg","avif","bmp","ico"].includes(ext);
   const isPdf = mime === "application/pdf" || ext === "pdf";
+  const isVideo = mime.startsWith("video/") || ["mp4","webm","mov","m4v","ogv"].includes(ext);
+  const isAudio = mime.startsWith("audio/") || ["mp3","wav","ogg","m4a","aac","flac"].includes(ext);
+  const isText =
+    mime.startsWith("text/") ||
+    ["txt","csv","json","md","log","xml","yaml","yml"].includes(ext) ||
+    mime === "application/json";
+  const isOffice = [
+    "doc","docx","xls","xlsx","ppt","pptx",
+  ].includes(ext) || mime.includes("officedocument") || mime.includes("msword") || mime.includes("ms-excel") || mime.includes("ms-powerpoint");
+
+  const officeViewer = isOffice && url
+    ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`
+    : null;
 
   return (
     <Dialog open={!!file} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-5xl w-[95vw] h-[88vh] flex flex-col p-0 gap-0">
         <DialogHeader className="p-4 border-b flex-row items-center justify-between space-y-0">
-          <DialogTitle className="truncate text-base">{file.name}</DialogTitle>
+          <DialogTitle className="truncate text-base pr-4">{file.name}</DialogTitle>
           {url && (
-            <Button asChild size="sm" variant="outline" className="ml-2 mr-6 shrink-0">
+            <Button asChild size="sm" variant="outline" className="mr-6 shrink-0">
               <a href={url} target="_blank" rel="noopener noreferrer" download={file.name}>
                 <Download className="h-4 w-4 mr-1" /> Download
               </a>
@@ -56,6 +85,24 @@ export function FilePreviewDialog({
             </div>
           ) : isPdf ? (
             <iframe src={url} title={file.name} className="w-full h-full border-0" />
+          ) : isVideo ? (
+            <div className="h-full grid place-items-center p-4 bg-black">
+              <video src={url} controls playsInline className="max-w-full max-h-full" />
+            </div>
+          ) : isAudio ? (
+            <div className="h-full grid place-items-center p-6">
+              <div className="w-full max-w-xl space-y-3 text-center">
+                <FileText className="h-10 w-10 mx-auto text-muted-foreground" />
+                <div className="text-sm font-medium">{file.name}</div>
+                <audio src={url} controls className="w-full" />
+              </div>
+            </div>
+          ) : isText && textContent !== null ? (
+            <pre className="h-full overflow-auto p-4 text-xs bg-background whitespace-pre-wrap break-words">
+              {textContent}
+            </pre>
+          ) : officeViewer ? (
+            <iframe src={officeViewer} title={file.name} className="w-full h-full border-0" />
           ) : (
             <div className="h-full grid place-items-center text-center p-6">
               <div>

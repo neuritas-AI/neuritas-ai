@@ -157,13 +157,27 @@ function SettingsPage() {
                     <div className="flex items-center gap-3">
                       <UserAvatar profile={m} size={36} />
                       <div>
-                        <div className="font-medium text-sm">{m.full_name ?? "—"}</div>
-                        <div className="flex gap-1 mt-0.5">
+                        <div className="font-medium text-sm flex items-center gap-2">
+                          {m.full_name ?? "—"}
+                          {canSeeActivity && activity[m.id] && (Date.now() - new Date(activity[m.id]).getTime() < 2 * 60_000) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Nu online
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1 mt-0.5 items-center">
                           {m.roles.map((r: string) => (
                             <Badge key={r} variant="outline" className={`text-[10px] ${r==="admin"?"border-primary/40 text-primary":""}`}>
                               {r === "admin" ? "Admin" : "Werknemer"}
                             </Badge>
                           ))}
+                          {canSeeActivity && (
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              {activity[m.id]
+                                ? `Laatst actief: ${formatLastSeen(activity[m.id])}`
+                                : "Nog niet actief"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -18,11 +18,17 @@ import { Logo } from "@/components/Logo";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { QuickActionsFab } from "@/components/QuickActionsFab";
 import { ProfilesProvider } from "@/lib/profiles";
+import { useActivityPing } from "@/lib/use-activity-ping";
 
 export const Route = createFileRoute("/_app")({ component: AppLayoutWrapped });
 
 function AppLayoutWrapped() {
   return <ProfilesProvider><AppLayout /></ProfilesProvider>;
+}
+
+function ActivityPinger() {
+  useActivityPing();
+  return null;
 }
 
 const baseNav = [

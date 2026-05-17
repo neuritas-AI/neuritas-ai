@@ -182,7 +182,7 @@ function ProjectDetail() {
         </TabsContent>
 
         <TabsContent value="files" className="mt-5">
-          <ProjectFiles projectId={id} customerId={project.customer_id} files={files} userId={user?.id ?? null} />
+          <ProjectFiles projectId={id} customerId={project.customer_id} files={files} profiles={profiles} userId={user?.id ?? null} />
         </TabsContent>
 
         {(perms.can_view_invoices || perms.can_edit_invoices) && (

@@ -142,6 +142,7 @@ function AppLayout() {
         </header>
         <div className="p-3 sm:p-4 md:p-8 max-w-[1600px] mx-auto"><Outlet /></div>
         <QuickActionsFab />
+        <ActivityPinger />
       </main>
     </div>
   );

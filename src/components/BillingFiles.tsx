@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Upload, Download, Trash2, FileText } from "lucide-react";
+import { Upload, Download, Trash2, FileText, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { fmtDateTime } from "@/lib/format";
+import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 
 export function BillingFiles({ kind, parentId, customerId, userId }: {
   kind: "quote" | "invoice";

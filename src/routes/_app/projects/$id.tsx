@@ -226,7 +226,7 @@ function ProjectDetail() {
   );
 }
 
-function ProjectFiles({ projectId, customerId, files, userId }: any) {
+function ProjectFiles({ projectId, customerId, files, profiles, userId }: any) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<any | null>(null);
   async function upload(fl: FileList | null) {
@@ -255,6 +255,16 @@ function ProjectFiles({ projectId, customerId, files, userId }: any) {
     await supabase.from("files").delete().eq("id", f.id);
     toast.success("Verwijderd");
   }
+  function fileKind(f: any) {
+    const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+    const m = (f.mime_type ?? "").toLowerCase();
+    if (m.startsWith("image/") || ["png","jpg","jpeg","gif","webp","svg","avif"].includes(ext)) return "image";
+    if (m.startsWith("video/") || ["mp4","webm","mov"].includes(ext)) return "video";
+    if (m.startsWith("audio/") || ["mp3","wav","ogg","m4a"].includes(ext)) return "audio";
+    if (m === "application/pdf" || ext === "pdf") return "pdf";
+    return "doc";
+  }
+  const kindIcon: Record<string, string> = { image: "🖼️", video: "🎬", audio: "🎵", pdf: "📄", doc: "📁" };
   return (
     <Card className="p-5 space-y-4">
       <div className="flex items-center justify-between pb-3 border-b">
@@ -264,23 +274,48 @@ function ProjectFiles({ projectId, customerId, files, userId }: any) {
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {files.length === 0 && <div className="col-span-full text-center text-muted-foreground py-8 text-sm">Nog geen bestanden</div>}
-        {files.map((f: any) => (
-          <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors">
-            <button type="button" onClick={() => setPreview(f)} className="flex items-start gap-3 w-full text-left">
-              <div className="h-10 w-10 rounded-lg bg-gradient-brand-soft grid place-items-center text-primary"><FileText className="h-5 w-5" /></div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate group-hover:text-primary">{f.name}</div>
-                <div className="text-xs text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
+        {files.map((f: any) => {
+          const kind = fileKind(f);
+          const uploader = profiles?.find((p: any) => p.id === f.uploaded_by)?.full_name ?? "Onbekend";
+          return (
+            <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors flex flex-col">
+              <button type="button" onClick={() => setPreview(f)} className="flex items-start gap-3 w-full text-left">
+                <div className="h-12 w-12 rounded-lg bg-gradient-brand-soft grid place-items-center text-xl overflow-hidden shrink-0">
+                  {kind === "image" ? (
+                    <ThumbImg path={f.storage_path} alt={f.name} />
+                  ) : (
+                    <span>{kindIcon[kind]}</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate group-hover:text-primary">{f.name}</div>
+                  <div className="text-[11px] text-muted-foreground truncate">{uploader}</div>
+                  <div className="text-[11px] text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
+                </div>
+              </button>
+              <div className="flex gap-1 mt-3 justify-end">
+                <Button size="sm" variant="ghost" onClick={()=>setPreview(f)} title="Bekijk"><FileText className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" onClick={()=>download(f)} title="Download"><Download className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" onClick={()=>del(f)} title="Verwijder"><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
-            </button>
-            <div className="flex gap-1 mt-3 justify-end">
-              <Button size="sm" variant="ghost" onClick={()=>download(f)}><Download className="h-3.5 w-3.5" /></Button>
-              <Button size="sm" variant="ghost" onClick={()=>del(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
       <FilePreviewDialog file={preview} onClose={() => setPreview(null)} />
     </Card>
   );
+}
+
+function ThumbImg({ path, alt }: { path: string; alt: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.storage.from("files").createSignedUrl(path, 600).then(({ data }) => {
+      if (!cancelled && data?.signedUrl) setSrc(data.signedUrl);
+    });
+    return () => { cancelled = true; };
+  }, [path]);
+  if (!src) return <span>🖼️</span>;
+  return <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />;
 }

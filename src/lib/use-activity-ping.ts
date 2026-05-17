@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useRouterState } from "@tanstack/react-router";
@@ -8,14 +8,14 @@ const INTERVAL_MS = 60_000; // throttle: max 1 write/min
 export function useActivityPing() {
   const { user } = useAuth();
   const path = useRouterState({ select: s => s.location.pathname });
+  const lastRef = useRef(0);
 
   useEffect(() => {
     if (!user) return;
-    let last = 0;
     const ping = () => {
       const now = Date.now();
-      if (now - last < INTERVAL_MS) return;
-      last = now;
+      if (now - lastRef.current < INTERVAL_MS) return;
+      lastRef.current = now;
       supabase.rpc("touch_activity").then(() => {});
     };
     ping();
@@ -30,9 +30,12 @@ export function useActivityPing() {
     };
   }, [user]);
 
-  // Route changes also count as activity
+  // Route changes trigger a (throttled) ping
   useEffect(() => {
     if (!user) return;
+    const now = Date.now();
+    if (now - lastRef.current < INTERVAL_MS) return;
+    lastRef.current = now;
     supabase.rpc("touch_activity").then(() => {});
   }, [path, user]);
 }

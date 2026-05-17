@@ -30,6 +30,8 @@ function SettingsPage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
+  const [activity, setActivity] = useState<Record<string, string>>({});
+  const canSeeActivity = (user?.email ?? "").toLowerCase() === "tijs.peetermans@neuritas-ai.com";
 
   async function loadMembers() {
     const [{ data: profiles }, { data: roles }] = await Promise.all([
@@ -39,6 +41,12 @@ function SettingsPage() {
     const byUser: Record<string, string[]> = {};
     (roles ?? []).forEach((r: any) => { (byUser[r.user_id] ||= []).push(r.role); });
     setMembers((profiles ?? []).map((p: any) => ({ ...p, roles: byUser[p.id] ?? [] })));
+    if (canSeeActivity) {
+      const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
+      const map: Record<string, string> = {};
+      (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
+      setActivity(map);
+    }
   }
 
   useEffect(() => {

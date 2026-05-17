@@ -18,6 +18,18 @@ import { UserPlus, Shield, Trash2, Camera } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PERMISSION_GROUPS, type Permissions } from "@/lib/permissions";
+import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
+import { nl } from "date-fns/locale";
+
+function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 60_000) return "zojuist";
+  if (diffMs < 60 * 60_000) return formatDistanceToNow(d, { addSuffix: true, locale: nl });
+  if (isToday(d)) return `vandaag om ${format(d, "HH:mm")}`;
+  if (isYesterday(d)) return `gisteren om ${format(d, "HH:mm")}`;
+  return format(d, "dd-MM-yyyy 'om' HH:mm");
+}
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 

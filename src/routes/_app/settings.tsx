@@ -184,19 +184,19 @@ function SettingsPage() {
               </div>
               <div className="divide-y">
                 {members.map(m => (
-                  <div key={m.id} className="flex items-center justify-between py-3">
-                    <div className="flex items-center gap-3">
+                  <div key={m.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <UserAvatar profile={m} size={36} />
-                      <div>
-                        <div className="font-medium text-sm flex items-center gap-2">
-                          {m.full_name ?? "—"}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
+                          <span className="truncate">{m.full_name ?? "—"}</span>
                           {canSeeActivity && activity[m.id] && (Date.now() - new Date(activity[m.id]).getTime() < 2 * 60_000) && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Nu online
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Nu online
                             </span>
                           )}
                         </div>
-                        <div className="flex gap-1 mt-0.5 items-center">
+                        <div className="flex gap-1 mt-0.5 items-center flex-wrap">
                           {m.roles.map((r: string) => (
                             <Badge key={r} variant="outline" className={`text-[10px] ${r==="admin"?"border-primary/40 text-primary":""}`}>
                               {r === "admin" ? "Admin" : "Werknemer"}
@@ -213,7 +213,7 @@ function SettingsPage() {
                       </div>
                     </div>
                     {m.id !== user?.id && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 sm:shrink-0 sm:ml-auto">
                         <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />
                         <DeleteUserButton userId={m.id} name={m.full_name} onDeleted={loadMembers} />
                       </div>

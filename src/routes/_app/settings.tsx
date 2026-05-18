@@ -43,7 +43,16 @@ function SettingsPage() {
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
   const [activity, setActivity] = useState<Record<string, string>>({});
+  const [, setTick] = useState(0); // periodieke re-render voor "Nu online" / relatieve tijden
   const canSeeActivity = (user?.email ?? "").toLowerCase() === "tijs.peetermans@neuritas-ai.com";
+
+  async function loadActivity() {
+    if (!canSeeActivity) return;
+    const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
+    const map: Record<string, string> = {};
+    (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
+    setActivity(map);
+  }
 
   async function loadMembers() {
     const [{ data: profiles }, { data: roles }] = await Promise.all([
@@ -53,12 +62,7 @@ function SettingsPage() {
     const byUser: Record<string, string[]> = {};
     (roles ?? []).forEach((r: any) => { (byUser[r.user_id] ||= []).push(r.role); });
     setMembers((profiles ?? []).map((p: any) => ({ ...p, roles: byUser[p.id] ?? [] })));
-    if (canSeeActivity) {
-      const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
-      const map: Record<string, string> = {};
-      (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
-      setActivity(map);
-    }
+    await loadActivity();
   }
 
   useEffect(() => {
@@ -69,6 +73,21 @@ function SettingsPage() {
     });
     loadMembers();
   }, [user]);
+
+  // Realtime + periodieke refresh van "Laatst actief"
+  useEffect(() => {
+    if (!user || !canSeeActivity) return;
+    const ch = supabase.channel(`user-activity-${user.id}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_activity" }, () => loadActivity())
+      .subscribe();
+    const tickId = window.setInterval(() => setTick(t => t + 1), 30_000);
+    const reloadId = window.setInterval(loadActivity, 60_000);
+    return () => {
+      supabase.removeChannel(ch);
+      window.clearInterval(tickId);
+      window.clearInterval(reloadId);
+    };
+  }, [user, canSeeActivity]);
 
   async function save() {
     const { error } = await supabase.from("profiles").update({ full_name: name }).eq("id", user!.id);
@@ -165,19 +184,19 @@ function SettingsPage() {
               </div>
               <div className="divide-y">
                 {members.map(m => (
-                  <div key={m.id} className="flex items-center justify-between py-3">
-                    <div className="flex items-center gap-3">
+                  <div key={m.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <UserAvatar profile={m} size={36} />
-                      <div>
-                        <div className="font-medium text-sm flex items-center gap-2">
-                          {m.full_name ?? "—"}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
+                          <span className="truncate">{m.full_name ?? "—"}</span>
                           {canSeeActivity && activity[m.id] && (Date.now() - new Date(activity[m.id]).getTime() < 2 * 60_000) && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Nu online
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Nu online
                             </span>
                           )}
                         </div>
-                        <div className="flex gap-1 mt-0.5 items-center">
+                        <div className="flex gap-1 mt-0.5 items-center flex-wrap">
                           {m.roles.map((r: string) => (
                             <Badge key={r} variant="outline" className={`text-[10px] ${r==="admin"?"border-primary/40 text-primary":""}`}>
                               {r === "admin" ? "Admin" : "Werknemer"}
@@ -194,7 +213,7 @@ function SettingsPage() {
                       </div>
                     </div>
                     {m.id !== user?.id && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 sm:shrink-0 sm:ml-auto">
                         <RoleSelect userId={m.id} currentRoles={m.roles} onChange={loadMembers} />
                         <DeleteUserButton userId={m.id} name={m.full_name} onDeleted={loadMembers} />
                       </div>

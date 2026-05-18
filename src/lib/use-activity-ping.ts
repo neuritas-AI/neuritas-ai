@@ -23,10 +23,15 @@ export function useActivityPing() {
     const onVis = () => { if (document.visibilityState === "visible") ping(); };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("focus", ping);
+    // Lichtgewicht user-interaction triggers (throttle voorkomt spam)
+    window.addEventListener("pointerdown", ping, { passive: true });
+    window.addEventListener("keydown", ping);
     return () => {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("focus", ping);
+      window.removeEventListener("pointerdown", ping);
+      window.removeEventListener("keydown", ping);
     };
   }, [user]);
 

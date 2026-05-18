@@ -43,7 +43,16 @@ function SettingsPage() {
   const [email] = useState(user?.email ?? "");
   const [members, setMembers] = useState<any[]>([]);
   const [activity, setActivity] = useState<Record<string, string>>({});
+  const [, setTick] = useState(0); // periodieke re-render voor "Nu online" / relatieve tijden
   const canSeeActivity = (user?.email ?? "").toLowerCase() === "tijs.peetermans@neuritas-ai.com";
+
+  async function loadActivity() {
+    if (!canSeeActivity) return;
+    const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
+    const map: Record<string, string> = {};
+    (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
+    setActivity(map);
+  }
 
   async function loadMembers() {
     const [{ data: profiles }, { data: roles }] = await Promise.all([
@@ -53,12 +62,7 @@ function SettingsPage() {
     const byUser: Record<string, string[]> = {};
     (roles ?? []).forEach((r: any) => { (byUser[r.user_id] ||= []).push(r.role); });
     setMembers((profiles ?? []).map((p: any) => ({ ...p, roles: byUser[p.id] ?? [] })));
-    if (canSeeActivity) {
-      const { data: act } = await supabase.from("user_activity" as any).select("user_id, last_seen_at");
-      const map: Record<string, string> = {};
-      (act ?? []).forEach((a: any) => { map[a.user_id] = a.last_seen_at; });
-      setActivity(map);
-    }
+    await loadActivity();
   }
 
   useEffect(() => {
@@ -69,6 +73,21 @@ function SettingsPage() {
     });
     loadMembers();
   }, [user]);
+
+  // Realtime + periodieke refresh van "Laatst actief"
+  useEffect(() => {
+    if (!user || !canSeeActivity) return;
+    const ch = supabase.channel(`user-activity-${user.id}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_activity" }, () => loadActivity())
+      .subscribe();
+    const tickId = window.setInterval(() => setTick(t => t + 1), 30_000);
+    const reloadId = window.setInterval(loadActivity, 60_000);
+    return () => {
+      supabase.removeChannel(ch);
+      window.clearInterval(tickId);
+      window.clearInterval(reloadId);
+    };
+  }, [user, canSeeActivity]);
 
   async function save() {
     const { error } = await supabase.from("profiles").update({ full_name: name }).eq("id", user!.id);

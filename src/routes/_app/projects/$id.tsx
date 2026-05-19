@@ -45,7 +45,7 @@ function ProjectDetail() {
     const [{ data: p }, { data: t }, { data: a }, { data: f }, { data: pr }, { data: cs }] = await Promise.all([
       supabase.from("projects").select("*, customers(*)").eq("id", id).maybeSingle(),
       supabase.from("tasks").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-      supabase.from("appointments").select("*").eq("project_id", id).order("start_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("project_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("customers").select("id, name"),
@@ -112,7 +112,7 @@ function ProjectDetail() {
         <TabsList className="bg-muted/50 flex-wrap h-auto">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
           <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
+          <TabsTrigger value="appts">Komende afspraken ({appts.length})</TabsTrigger>
           <TabsTrigger value="meetings">Meetings</TabsTrigger>
           <TabsTrigger value="files">Bestanden ({files.length})</TabsTrigger>
           {(perms.can_view_invoices || perms.can_edit_invoices) && <TabsTrigger value="invoices">Facturen ({invoices.length})</TabsTrigger>}
@@ -168,7 +168,7 @@ function ProjectDetail() {
 
         <TabsContent value="appts" className="mt-5">
           <Card className="p-5 space-y-2">
-            {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen afspraken</p>}
+            {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen komende afspraken</p>}
             {appts.map(a => (
               <div key={a.id} className="p-3 rounded-lg border flex items-center gap-3">
                 <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />

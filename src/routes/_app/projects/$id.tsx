@@ -45,7 +45,7 @@ function ProjectDetail() {
     const [{ data: p }, { data: t }, { data: a }, { data: f }, { data: pr }, { data: cs }] = await Promise.all([
       supabase.from("projects").select("*, customers(*)").eq("id", id).maybeSingle(),
       supabase.from("tasks").select("*").eq("project_id", id).order("created_at", { ascending: false }),
-      supabase.from("appointments").select("*").eq("project_id", id).order("start_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("project_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("customers").select("id, name"),

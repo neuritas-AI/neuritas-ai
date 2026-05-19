@@ -168,7 +168,7 @@ function ProjectDetail() {
 
         <TabsContent value="appts" className="mt-5">
           <Card className="p-5 space-y-2">
-            {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen afspraken</p>}
+            {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen komende afspraken</p>}
             {appts.map(a => (
               <div key={a.id} className="p-3 rounded-lg border flex items-center gap-3">
                 <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />

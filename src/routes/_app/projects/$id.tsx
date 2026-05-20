@@ -17,6 +17,7 @@ import { usePermissions } from "@/lib/permissions";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
+import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
 import { isInternalProject, internalHeaderClass, internalBadgeClass, internalIconWrapClass } from "@/lib/project-style";

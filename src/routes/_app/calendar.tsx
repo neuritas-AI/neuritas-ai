@@ -207,11 +207,15 @@ function CalendarPage() {
 function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, types, defaultDate, onClose }: any) {
   const TYPE_COLOR: Record<string,string> = Object.fromEntries((types ?? []).map((t: ApptType) => [t.key, t.color]));
   const defaultType = (types && types[0]?.key) ?? "client_meeting";
+  const initLinkType: "none" | "customer" | "project" = appt
+    ? (appt.project_id ? "project" : appt.customer_id ? "customer" : "none")
+    : "none";
   const init = appt ? {
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
     appointment_type: appt.appointment_type ?? defaultType,
+    link_type: initLinkType,
     customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
     participants: appt.participants ?? [],
   } : {
@@ -219,6 +223,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
     appointment_type: defaultType,
+    link_type: "none" as "none" | "customer" | "project",
     customer_id: "", project_id: "",
     participants: userId ? [userId] : [],
   };

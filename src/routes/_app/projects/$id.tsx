@@ -17,6 +17,7 @@ import { usePermissions } from "@/lib/permissions";
 import { InvoiceDialog } from "@/components/InvoiceDialog";
 import { MeetingsTab } from "@/components/MeetingsTab";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
+import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
 import { isInternalProject, internalHeaderClass, internalBadgeClass, internalIconWrapClass } from "@/lib/project-style";
@@ -40,6 +41,24 @@ function ProjectDetail() {
   const [edit, setEdit] = useState(false);
   const [invDialog, setInvDialog] = useState<any | false>(false);
   const [taskDialog, setTaskDialog] = useState<any | false>(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkable, setLinkable] = useState<any[]>([]);
+
+  async function openLinkDialog() {
+    const { data } = await supabase.from("appointments")
+      .select("id, title, start_at, customer_id, project_id")
+      .is("customer_id", null).is("project_id", null)
+      .gte("end_at", new Date().toISOString())
+      .order("start_at", { ascending: true });
+    setLinkable(data ?? []);
+    setLinkOpen(true);
+  }
+  async function linkAppt(apptId: string) {
+    const { error } = await supabase.from("appointments").update({ project_id: id, customer_id: null }).eq("id", apptId);
+    if (error) return toast.error(error.message);
+    toast.success("Afspraak gekoppeld");
+    setLinkOpen(false); load();
+  }
 
   async function load() {
     const [{ data: p }, { data: t }, { data: a }, { data: f }, { data: pr }, { data: cs }] = await Promise.all([
@@ -168,17 +187,22 @@ function ProjectDetail() {
 
         <TabsContent value="appts" className="mt-5">
           <Card className="p-5 space-y-2">
+            <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+              <p className="text-sm text-muted-foreground">Enkel toekomstige afspraken</p>
+              <Button size="sm" variant="outline" onClick={openLinkDialog}><Plus className="h-4 w-4 mr-1" /> Bestaande afspraak koppelen</Button>
+            </div>
             {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen komende afspraken</p>}
             {appts.map(a => (
               <div key={a.id} className="p-3 rounded-lg border flex items-center gap-3">
                 <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{a.title}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{a.title}</div>
                   <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)}</div>
                 </div>
               </div>
             ))}
           </Card>
+          <LinkApptDialog open={linkOpen} onOpenChange={setLinkOpen} appts={linkable} onPick={linkAppt} title="Koppel afspraak aan project" emptyText="Geen vrije afspraken (nog niet aan klant of project gekoppeld)" />
         </TabsContent>
 
         <TabsContent value="files" className="mt-5">

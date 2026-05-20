@@ -207,11 +207,15 @@ function CalendarPage() {
 function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, types, defaultDate, onClose }: any) {
   const TYPE_COLOR: Record<string,string> = Object.fromEntries((types ?? []).map((t: ApptType) => [t.key, t.color]));
   const defaultType = (types && types[0]?.key) ?? "client_meeting";
+  const initLinkType: "none" | "customer" | "project" = appt
+    ? (appt.project_id ? "project" : appt.customer_id ? "customer" : "none")
+    : "none";
   const init = appt ? {
     title: appt.title, description: appt.description ?? "",
     start_at: format(new Date(appt.start_at), "yyyy-MM-dd'T'HH:mm"),
     end_at: format(new Date(appt.end_at), "yyyy-MM-dd'T'HH:mm"),
     appointment_type: appt.appointment_type ?? defaultType,
+    link_type: initLinkType,
     customer_id: appt.customer_id ?? "", project_id: appt.project_id ?? "",
     participants: appt.participants ?? [],
   } : {
@@ -219,6 +223,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
     start_at: format(defaultDate, "yyyy-MM-dd'T'09:00"),
     end_at: format(defaultDate, "yyyy-MM-dd'T'10:00"),
     appointment_type: defaultType,
+    link_type: "none" as "none" | "customer" | "project",
     customer_id: "", project_id: "",
     participants: userId ? [userId] : [],
   };
@@ -260,10 +265,15 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
       end_at: new Date(form.end_at).toISOString(),
       appointment_type: form.appointment_type,
       color: TYPE_COLOR[form.appointment_type as keyof typeof TYPE_COLOR] ?? "#3b82f6",
-      customer_id: form.customer_id || null,
-      project_id: form.project_id || null,
+      customer_id: form.link_type === "customer" ? (form.customer_id || null) : null,
+      project_id: form.link_type === "project" ? (form.project_id || null) : null,
       participants: requiresAttendance ? form.participants : (appt?.participants ?? (userId ? [userId] : [])),
     };
+    // Bij project: klant automatisch afleiden van project (handig voor overzicht), maar primaire koppeling blijft project
+    if (form.link_type === "project" && form.project_id) {
+      const p = projects.find((x: any) => x.id === form.project_id);
+      if (p?.customer_id) payload.customer_id = null; // strikt: nooit beide
+    }
     if (!appt) { payload.created_by = userId; }
     const { error } = appt
       ? await supabase.from("appointments").update(payload).eq("id", appt.id)
@@ -310,25 +320,35 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
         </div>
 
         {!requiresAttendance && (
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Klant</Label>
-              <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
-                <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-                <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label>Project</Label>
-              <Select value={form.project_id || "none"} onValueChange={v=>{
-                const p = projects.find((x:any)=>x.id===v);
-                setForm({...form, project_id: v==="none"?"":v, ...(p ? { customer_id: p.customer_id } : {})});
-              }}>
-                <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
+          <div className="space-y-3">
+            <div>
+              <Label>Koppelen aan</Label>
+              <Select value={form.link_type} onValueChange={(v: any)=>setForm({...form, link_type: v, customer_id: "", project_id: ""})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Geen</SelectItem>
-                  {projects.filter((p:any)=>!form.customer_id || p.customer_id===form.customer_id).map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  <SelectItem value="none">Geen koppeling</SelectItem>
+                  <SelectItem value="customer">Klant</SelectItem>
+                  <SelectItem value="project">Project</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">Een afspraak kan aan een klant óf een project gekoppeld worden, nooit aan beide.</p>
             </div>
+            {form.link_type === "customer" && (
+              <div><Label>Klant</Label>
+                <Select value={form.customer_id || ""} onValueChange={v=>setForm({...form, customer_id: v})}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer klant" /></SelectTrigger>
+                  <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            {form.link_type === "project" && (
+              <div><Label>Project</Label>
+                <Select value={form.project_id || ""} onValueChange={v=>setForm({...form, project_id: v})}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer project" /></SelectTrigger>
+                  <SelectContent>{projects.map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         )}
 

@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Send, Calendar, CheckSquare, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt } from "lucide-react";
+import { ArrowLeft, Pencil, Send, Calendar, CheckSquare, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt, Plus } from "lucide-react";
+import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { Badge as _B } from "@/components/ui/badge";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
 import { usePermissions } from "@/lib/permissions";
@@ -36,12 +37,15 @@ function CustomerDetail() {
   const [note, setNote] = useState("");
   const [edit, setEdit] = useState(false);
 
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkable, setLinkable] = useState<any[]>([]);
+
   async function load() {
     const [{ data: c }, { data: n }, { data: t }, { data: a }, { data: pj }, { data: p }] = await Promise.all([
       supabase.from("customers").select("*").eq("id", id).maybeSingle(),
       supabase.from("customer_notes").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
       supabase.from("tasks").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
-      supabase.from("appointments").select("*").eq("customer_id", id).order("start_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("customer_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("projects").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
@@ -54,6 +58,24 @@ function CustomerDetail() {
       const { data: inv } = await supabase.from("invoices").select("*").eq("customer_id", id).order("created_at", { ascending: false });
       setInvoices(inv ?? []);
     }
+  }
+
+  async function openLinkDialog() {
+    // Toon enkel toekomstige afspraken die NIET aan een klant of project gekoppeld zijn
+    const { data } = await supabase.from("appointments")
+      .select("id, title, start_at, customer_id, project_id")
+      .is("customer_id", null).is("project_id", null)
+      .gte("end_at", new Date().toISOString())
+      .order("start_at", { ascending: true });
+    setLinkable(data ?? []);
+    setLinkOpen(true);
+  }
+
+  async function linkAppt(apptId: string) {
+    const { error } = await supabase.from("appointments").update({ customer_id: id, project_id: null }).eq("id", apptId);
+    if (error) return toast.error(error.message);
+    toast.success("Afspraak gekoppeld");
+    setLinkOpen(false); load();
   }
   useEffect(() => {
     load();
@@ -115,7 +137,7 @@ function CustomerDetail() {
         <TabsList className="bg-muted/50">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
           <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
+          <TabsTrigger value="appts">Komende afspraken ({appts.length})</TabsTrigger>
           <TabsTrigger value="notes">Notities ({notes.length})</TabsTrigger>
           <TabsTrigger value="projects">Projecten ({projects.length})</TabsTrigger>
           {(perms.can_view_quotes || perms.can_view_invoices) && (
@@ -159,19 +181,24 @@ function CustomerDetail() {
 
         <TabsContent value="appts" className="mt-5">
           <Card className="p-5">
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <p className="text-sm text-muted-foreground">Enkel toekomstige afspraken</p>
+              <Button size="sm" variant="outline" onClick={openLinkDialog}><Plus className="h-4 w-4 mr-1" /> Bestaande afspraak koppelen</Button>
+            </div>
             <div className="space-y-2">
-              {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen afspraken</p>}
+              {appts.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Geen komende afspraken</p>}
               {appts.map(a => (
                 <div key={a.id} className="p-3 rounded-lg border flex items-center gap-3">
                   <div className="w-1 h-10 rounded-full" style={{ background: a.color }} />
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{a.title}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm truncate">{a.title}</div>
                     <div className="text-xs text-muted-foreground">{fmtDateTime(a.start_at)}</div>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
+          <LinkApptDialog open={linkOpen} onOpenChange={setLinkOpen} appts={linkable} onPick={linkAppt} title="Koppel afspraak aan klant" emptyText="Geen vrije afspraken (nog niet aan klant of project gekoppeld)" />
         </TabsContent>
 
         <TabsContent value="notes" className="mt-5">

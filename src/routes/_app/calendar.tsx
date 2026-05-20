@@ -320,25 +320,35 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
         </div>
 
         {!requiresAttendance && (
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Klant</Label>
-              <Select value={form.customer_id || "none"} onValueChange={v=>setForm({...form,customer_id: v==="none"?"":v})}>
-                <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
-                <SelectContent><SelectItem value="none">Geen</SelectItem>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label>Project</Label>
-              <Select value={form.project_id || "none"} onValueChange={v=>{
-                const p = projects.find((x:any)=>x.id===v);
-                setForm({...form, project_id: v==="none"?"":v, ...(p ? { customer_id: p.customer_id } : {})});
-              }}>
-                <SelectTrigger><SelectValue placeholder="Geen" /></SelectTrigger>
+          <div className="space-y-3">
+            <div>
+              <Label>Koppelen aan</Label>
+              <Select value={form.link_type} onValueChange={(v: any)=>setForm({...form, link_type: v, customer_id: "", project_id: ""})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Geen</SelectItem>
-                  {projects.filter((p:any)=>!form.customer_id || p.customer_id===form.customer_id).map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  <SelectItem value="none">Geen koppeling</SelectItem>
+                  <SelectItem value="customer">Klant</SelectItem>
+                  <SelectItem value="project">Project</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">Een afspraak kan aan een klant óf een project gekoppeld worden, nooit aan beide.</p>
             </div>
+            {form.link_type === "customer" && (
+              <div><Label>Klant</Label>
+                <Select value={form.customer_id || ""} onValueChange={v=>setForm({...form, customer_id: v})}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer klant" /></SelectTrigger>
+                  <SelectContent>{customers.map((c:any)=> <SelectItem key={c.id} value={c.id}>{customerLabel(c)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            {form.link_type === "project" && (
+              <div><Label>Project</Label>
+                <Select value={form.project_id || ""} onValueChange={v=>setForm({...form, project_id: v})}>
+                  <SelectTrigger><SelectValue placeholder="Selecteer project" /></SelectTrigger>
+                  <SelectContent>{projects.map((p:any)=> <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         )}
 

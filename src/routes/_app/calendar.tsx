@@ -265,10 +265,15 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
       end_at: new Date(form.end_at).toISOString(),
       appointment_type: form.appointment_type,
       color: TYPE_COLOR[form.appointment_type as keyof typeof TYPE_COLOR] ?? "#3b82f6",
-      customer_id: form.customer_id || null,
-      project_id: form.project_id || null,
+      customer_id: form.link_type === "customer" ? (form.customer_id || null) : null,
+      project_id: form.link_type === "project" ? (form.project_id || null) : null,
       participants: requiresAttendance ? form.participants : (appt?.participants ?? (userId ? [userId] : [])),
     };
+    // Bij project: klant automatisch afleiden van project (handig voor overzicht), maar primaire koppeling blijft project
+    if (form.link_type === "project" && form.project_id) {
+      const p = projects.find((x: any) => x.id === form.project_id);
+      if (p?.customer_id) payload.customer_id = null; // strikt: nooit beide
+    }
     if (!appt) { payload.created_by = userId; }
     const { error } = appt
       ? await supabase.from("appointments").update(payload).eq("id", appt.id)

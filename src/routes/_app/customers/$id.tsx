@@ -136,7 +136,7 @@ function CustomerDetail() {
         <TabsList className="bg-muted/50">
           <TabsTrigger value="overview">Overzicht</TabsTrigger>
           <TabsTrigger value="tasks">Taken ({tasks.length})</TabsTrigger>
-          <TabsTrigger value="appts">Afspraken ({appts.length})</TabsTrigger>
+          <TabsTrigger value="appts">Komende afspraken ({appts.length})</TabsTrigger>
           <TabsTrigger value="notes">Notities ({notes.length})</TabsTrigger>
           <TabsTrigger value="projects">Projecten ({projects.length})</TabsTrigger>
           {(perms.can_view_quotes || perms.can_view_invoices) && (

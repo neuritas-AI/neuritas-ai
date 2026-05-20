@@ -36,12 +36,15 @@ function CustomerDetail() {
   const [note, setNote] = useState("");
   const [edit, setEdit] = useState(false);
 
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkable, setLinkable] = useState<any[]>([]);
+
   async function load() {
     const [{ data: c }, { data: n }, { data: t }, { data: a }, { data: pj }, { data: p }] = await Promise.all([
       supabase.from("customers").select("*").eq("id", id).maybeSingle(),
       supabase.from("customer_notes").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
       supabase.from("tasks").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
-      supabase.from("appointments").select("*").eq("customer_id", id).order("start_at", { ascending: false }),
+      supabase.from("appointments").select("*").eq("customer_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("projects").select("*").eq("customer_id", id).order("updated_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
@@ -54,6 +57,24 @@ function CustomerDetail() {
       const { data: inv } = await supabase.from("invoices").select("*").eq("customer_id", id).order("created_at", { ascending: false });
       setInvoices(inv ?? []);
     }
+  }
+
+  async function openLinkDialog() {
+    // Toon enkel toekomstige afspraken die NIET aan een klant of project gekoppeld zijn
+    const { data } = await supabase.from("appointments")
+      .select("id, title, start_at, customer_id, project_id")
+      .is("customer_id", null).is("project_id", null)
+      .gte("end_at", new Date().toISOString())
+      .order("start_at", { ascending: true });
+    setLinkable(data ?? []);
+    setLinkOpen(true);
+  }
+
+  async function linkAppt(apptId: string) {
+    const { error } = await supabase.from("appointments").update({ customer_id: id, project_id: null }).eq("id", apptId);
+    if (error) return toast.error(error.message);
+    toast.success("Afspraak gekoppeld");
+    setLinkOpen(false); load();
   }
   useEffect(() => {
     load();

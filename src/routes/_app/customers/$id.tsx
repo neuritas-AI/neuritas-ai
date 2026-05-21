@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Send, Calendar, CheckSquare, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, Send, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt, Plus, CheckSquare, CalendarDays, StickyNote, Clock, Link2 } from "lucide-react";
 import { LinkApptDialog } from "@/components/LinkApptDialog";
-import { Badge as _B } from "@/components/ui/badge";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
 import { usePermissions } from "@/lib/permissions";
 import { fmtDateTime, fmtDate, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
@@ -19,6 +18,9 @@ import { useAuth } from "@/lib/auth";
 import { CustomerDialog } from "./index";
 import { CustomerStatusSelect } from "@/components/CustomerStatusSelect";
 import { customerAccent } from "@/lib/customer-colors";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/customers/$id")({ component: CustomerDetail });
 

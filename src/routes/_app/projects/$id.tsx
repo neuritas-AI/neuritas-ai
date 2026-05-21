@@ -437,34 +437,47 @@ function ProjectFiles({ projectId, customerId, files, profiles, userId }: any) {
   }
   const kindIcon: Record<string, string> = { image: "🖼️", video: "🎬", audio: "🎵", pdf: "📄", doc: "📁" };
   return (
-    <Card className="p-5 space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b">
-        <p className="text-sm text-muted-foreground">Bestanden gekoppeld aan dit project</p>
+    <Card className="p-5 md:p-6 rounded-2xl shadow-soft border space-y-4">
+      <div className="flex items-center justify-between gap-3 pb-3 border-b">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 grid place-items-center">
+            <Folder className="h-4 w-4" />
+          </div>
+          <div>
+            <h2 className="font-display font-semibold text-base leading-none">Bestanden</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{files.length} item{files.length === 1 ? "" : "s"}</p>
+          </div>
+        </div>
         <input ref={inputRef} type="file" multiple onChange={e=>upload(e.target.files)} className="hidden" id="pf-up" />
-        <Button asChild className="bg-gradient-brand border-0"><label htmlFor="pf-up" className="cursor-pointer"><Upload className="h-4 w-4 mr-1" /> Upload bestand</label></Button>
+        <Button asChild className="bg-gradient-brand border-0"><label htmlFor="pf-up" className="cursor-pointer"><Upload className="h-4 w-4 mr-1" /> Upload</label></Button>
       </div>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {files.length === 0 && <div className="col-span-full text-center text-muted-foreground py-8 text-sm">Nog geen bestanden</div>}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {files.length === 0 && (
+          <div className="col-span-full text-center text-muted-foreground py-10 text-sm">
+            <Folder className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            Nog geen bestanden
+          </div>
+        )}
         {files.map((f: any) => {
           const kind = fileKind(f);
           const uploader = profiles?.find((p: any) => p.id === f.uploaded_by)?.full_name ?? "Onbekend";
           return (
-            <Card key={f.id} className="p-4 group hover:border-primary/40 transition-colors flex flex-col">
-              <button type="button" onClick={() => setPreview(f)} className="flex items-start gap-3 w-full text-left">
-                <div className="h-12 w-12 rounded-lg bg-gradient-brand-soft grid place-items-center text-xl overflow-hidden shrink-0">
+            <Card key={f.id} className="overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all rounded-xl border flex flex-col">
+              <button type="button" onClick={() => setPreview(f)} className="block w-full text-left">
+                <div className="aspect-[4/3] w-full bg-gradient-brand-soft grid place-items-center text-3xl overflow-hidden border-b">
                   {kind === "image" ? (
                     <ThumbImg path={f.storage_path} alt={f.name} />
                   ) : (
                     <span>{kindIcon[kind]}</span>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="p-3">
                   <div className="font-medium text-sm truncate group-hover:text-primary">{f.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">{uploader}</div>
+                  <div className="text-[11px] text-muted-foreground truncate mt-0.5">{uploader}</div>
                   <div className="text-[11px] text-muted-foreground">{(f.size/1024).toFixed(1)} KB · {fmtDateTime(f.created_at)}</div>
                 </div>
               </button>
-              <div className="flex gap-1 mt-3 justify-end">
+              <div className="flex gap-1 px-2 pb-2 justify-end border-t pt-2">
                 <Button size="sm" variant="ghost" onClick={()=>setPreview(f)} title="Bekijk"><FileText className="h-3.5 w-3.5" /></Button>
                 <Button size="sm" variant="ghost" onClick={()=>download(f)} title="Download"><Download className="h-3.5 w-3.5" /></Button>
                 <Button size="sm" variant="ghost" onClick={()=>del(f)} title="Verwijder"><Trash2 className="h-3.5 w-3.5" /></Button>

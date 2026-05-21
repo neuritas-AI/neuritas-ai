@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, FileText, Upload, Download, Trash2, Users as UsersIcon, Plus, CheckSquare, CalendarDays, Folder, Clock, Link2 } from "lucide-react";
 import { fmtDate, fmtDateTime, statusColor, statusLabel, priorityColor, priorityLabel } from "@/lib/format";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, PROJECT_STATUS_REQUIRES_REASON } from "@/lib/billing-format";
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
@@ -20,9 +20,11 @@ import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
-import { isInternalProject, internalHeaderClass, internalBadgeClass, internalIconWrapClass } from "@/lib/project-style";
+import { isInternalProject, internalBadgeClass, internalIconWrapClass, projectAccent } from "@/lib/project-style";
 import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 

@@ -98,8 +98,6 @@ function CustomerDetail() {
     .map((uid: string) => profiles.find(p => p.id === uid)?.full_name ?? "Onbekend")
     .join(", ");
 
-  return (
-    <div className="space-y-6 max-w-6xl">
   const accent = customerAccent(customer.color);
   const heroStyle: React.CSSProperties = {
     backgroundImage: `linear-gradient(135deg, ${accent}22 0%, ${accent}08 55%, transparent 100%)`,

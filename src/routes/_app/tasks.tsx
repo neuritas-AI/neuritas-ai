@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Calendar as CalIcon, ListTodo, Loader2, CheckCircle2, AlertTriangle, Search, LayoutGrid, List as ListIcon } from "lucide-react";
+import { Trash2, Pencil, Calendar as CalIcon, ListTodo, Loader2, CheckCircle2, AlertTriangle, Search, LayoutGrid, List as ListIcon } from "lucide-react";
 import { fmtDate, isOverdue, isUrgent, priorityColor, priorityLabel, statusColor, statusLabel, statusKanbanAccent } from "@/lib/format";
 import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";

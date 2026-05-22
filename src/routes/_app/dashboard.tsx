@@ -203,7 +203,7 @@ function Dashboard() {
             {Object.entries(tasksByUser).map(([uid, list]) => {
               const profile = profiles.find(p => p.id === uid);
               const name = uid === "unassigned" ? "Niet toegewezen" : (profile?.full_name ?? "Onbekend");
-              const initials = name.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase();
+              const initials = name.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
               const high = list.filter(t => t.priority === "high").length;
               const urgent = list.filter(t => isUrgent(t.deadline, t.status)).length;
               return (

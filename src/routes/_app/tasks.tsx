@@ -93,19 +93,44 @@ function TasksPage() {
     else toast.success(next ? "Je bent nu bezig met deze taak" : "Niet meer bezig");
   }
 
+  const counts = useMemo(() => ({
+    todo: viewFiltered.filter(t => t.status === "todo").length,
+    in_progress: viewFiltered.filter(t => t.status === "in_progress").length,
+    done: viewFiltered.filter(t => t.status === "done").length,
+    overdue: viewFiltered.filter(t => isOverdue(t.deadline, t.status)).length,
+  }), [viewFiltered]);
+
+  const statusMeta: Record<string, { label: string; icon: any; tint: string; dot: string }> = {
+    todo:        { label: "To do",       icon: ListTodo,     tint: "hsl(220 9% 46%)",  dot: "bg-muted-foreground/60" },
+    in_progress: { label: "In progress", icon: Loader2,      tint: "hsl(38 92% 50%)",  dot: "bg-amber-500" },
+    done:        { label: "Done",        icon: CheckCircle2, tint: "hsl(142 71% 45%)", dot: "bg-emerald-500" },
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-display font-semibold">Taken</h1>
-          <p className="text-muted-foreground text-sm mt-1">Beheer to-do's, prioriteiten en deadlines</p>
+      {/* Hero */}
+      <div className="relative overflow-hidden rounded-3xl border bg-gradient-brand-soft p-6 sm:p-8 shadow-soft">
+        <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="relative flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 text-xs text-muted-foreground uppercase tracking-wider font-medium">
+              <ListTodo className="h-3.5 w-3.5" /> Workspace
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-display font-semibold tracking-tight">Taken</h1>
+            <p className="text-muted-foreground text-sm max-w-lg">Beheer to-do's, prioriteiten en deadlines. Taken worden binnen een project aangemaakt.</p>
+          </div>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
-          <span className="text-xs text-muted-foreground italic">Taken worden binnen een project aangemaakt.</span>
-          <TaskDialog key={editing?.id ?? "new"} task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
-        </Dialog>
+
+        {/* Stat tiles */}
+        <div className="relative mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <StatTile icon={<ListTodo className="h-4 w-4" />} label="Te doen" value={counts.todo} tint="hsl(220 9% 46%)" />
+          <StatTile icon={<Loader2 className="h-4 w-4" />} label="Bezig" value={counts.in_progress} tint="hsl(38 92% 50%)" />
+          <StatTile icon={<CheckCircle2 className="h-4 w-4" />} label="Afgerond" value={counts.done} tint="hsl(142 71% 45%)" />
+          <StatTile icon={<AlertTriangle className="h-4 w-4" />} label="Te laat" value={counts.overdue} tint="hsl(0 84% 60%)" alert={counts.overdue > 0} />
+        </div>
       </div>
 
+      {/* View chips */}
       <div className="flex flex-wrap gap-2">
         {([
           { k: "mine", l: "Mijn taken" },
@@ -114,131 +139,201 @@ function TasksPage() {
           ...(isAdmin ? [{ k: "all" as const, l: "Alle taken" }] : []),
         ] as const).map(v => (
           <button key={v.k} onClick={()=>setView(v.k as ViewKey)}
-            className={`px-3 py-1.5 rounded-full text-sm transition-all ${view === v.k ? "bg-gradient-brand text-white shadow-brand" : "bg-muted hover:bg-accent"}`}>
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${view === v.k ? "bg-gradient-brand text-white shadow-brand" : "bg-card border hover:border-primary/40 hover:shadow-soft"}`}>
             {v.l}
           </button>
         ))}
       </div>
 
-      <Card className="p-4 flex gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft">
-        <Input placeholder="Zoek op titel of tag…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
+      {/* Filter bar */}
+      <Card className="p-3 sm:p-4 flex gap-2 sm:gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft rounded-2xl backdrop-blur bg-card/80">
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input placeholder="Zoek op titel of tag…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 rounded-full border-muted bg-background/60" />
+        </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40 rounded-full"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle statussen</SelectItem>
             {STATUSES.map(s => <SelectItem key={s} value={s}>{statusLabel[s]}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-40 rounded-full"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle prioriteiten</SelectItem>
             <SelectItem value="low">Laag</SelectItem><SelectItem value="normal">Normaal</SelectItem><SelectItem value="high">Hoog</SelectItem>
           </SelectContent>
         </Select>
-        <span className="text-xs text-muted-foreground ml-auto">{filtered.length} taak{filtered.length===1?"":"en"}</span>
+        <span className="text-xs text-muted-foreground ml-auto px-2">{filtered.length} taak{filtered.length===1?"":"en"}</span>
       </Card>
 
       <Tabs defaultValue="kanban">
-        <TabsList><TabsTrigger value="kanban">Kanban</TabsTrigger><TabsTrigger value="list">Lijst</TabsTrigger></TabsList>
+        <TabsList className="rounded-full bg-muted/60 p-1">
+          <TabsTrigger value="kanban" className="rounded-full data-[state=active]:shadow-soft gap-1.5"><LayoutGrid className="h-3.5 w-3.5" /> Kanban</TabsTrigger>
+          <TabsTrigger value="list" className="rounded-full data-[state=active]:shadow-soft gap-1.5"><ListIcon className="h-3.5 w-3.5" /> Lijst</TabsTrigger>
+        </TabsList>
 
-        <TabsContent value="kanban">
+        <TabsContent value="kanban" className="mt-4">
           <div className="grid md:grid-cols-3 gap-4">
-            {STATUSES.map(s => (
-              <Card key={s} className={`p-4 ${statusKanbanAccent[s]}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-display font-semibold">{statusLabel[s]}</h3>
-                  <Badge variant="outline">{filtered.filter(t => t.status === s).length}</Badge>
+            {STATUSES.map(s => {
+              const meta = statusMeta[s];
+              const Icon = meta.icon;
+              const colTasks = filtered.filter(t => t.status === s);
+              return (
+              <div key={s} className="rounded-2xl border bg-card/50 backdrop-blur p-4 shadow-soft flex flex-col">
+                <div className="flex items-center justify-between mb-4 pb-3 border-b">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ background: `${meta.tint}1f`, color: meta.tint }}>
+                      <Icon className={`h-4 w-4 ${s === "in_progress" ? "animate-spin" : ""}`} />
+                    </span>
+                    <h3 className="font-display font-semibold">{meta.label}</h3>
+                  </div>
+                  <Badge variant="outline" className="rounded-full font-mono text-xs">{colTasks.length}</Badge>
                 </div>
-                <div className="space-y-2">
-                  {filtered.filter(t => t.status === s).map(t => {
+                <div className="space-y-2.5 flex-1">
+                  {colTasks.map(t => {
                     const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
                     const tInternal = isInternalProject(t.projects);
-                    const accent = tInternal ? INTERNAL_PURPLE : (t.customers?.color || "transparent");
+                    const accent = tInternal ? INTERNAL_PURPLE : (t.customers?.color || "hsl(220 9% 60%)");
+                    const overdue = isOverdue(t.deadline, t.status);
+                    const urgent = isUrgent(t.deadline, t.status);
+                    const worker = t.current_worker_id ? profiles.find(p => p.id === t.current_worker_id) : null;
+                    const mine = user && t.current_worker_id === user.id;
                     return (
-                    <div key={t.id} className={`p-3 rounded-lg border hover:shadow-soft transition-all cursor-pointer border-l-4 ${tInternal ? "bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-900" : "bg-card"} ${isUrgent(t.deadline,t.status)?"ring-1 ring-destructive/30":""}`}
-                      style={{ borderLeftColor: accent }}
+                    <div key={t.id}
+                      className={`group relative p-4 rounded-xl border bg-card hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden ${tInternal ? "bg-violet-50/40 dark:bg-violet-950/20" : ""} ${urgent ? "ring-1 ring-destructive/30" : ""}`}
                       onClick={()=>{ setEditing(t); setOpen(true); }}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="font-medium text-sm">{t.title}</div>
-                        {tInternal && <Badge className={internalBadgeClass + " text-[9px] py-0 px-1.5 shrink-0"}><Building2 className="h-2.5 w-2.5 mr-0.5" />Intern</Badge>}
-                      </div>
-                      {t.customers && !tInternal && <div className="text-xs text-muted-foreground mt-0.5">{customerLabel(t.customers)}</div>}
-                      {tInternal && t.projects?.name && <div className="text-xs text-violet-700/80 dark:text-violet-300/80 mt-0.5">{t.projects.name}</div>}
-                      <div className="flex items-center justify-between mt-2 gap-2 flex-wrap">
-                        <Badge className={`${priorityColor[t.priority]} text-[10px]`}>{priorityLabel[t.priority]}</Badge>
-                        {t.deadline && (
-                          <span className={`text-[10px] inline-flex items-center gap-0.5 ${isOverdue(t.deadline,t.status)?"text-destructive font-medium":"text-muted-foreground"}`}>
-                            <CalIcon className="h-2.5 w-2.5" /> {fmtDate(t.deadline)}
-                          </span>
-                        )}
-                      </div>
-                      {assignees.length > 0 && (
-                        <div className="mt-2">
-                          <UserAvatarStack profiles={assignees as any[]} size={22} />
+                      <span className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full" style={{ background: accent }} />
+                      <div className="pl-1.5">
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h4 className="font-semibold text-sm leading-snug line-clamp-2">{t.title}</h4>
+                          {tInternal && <Badge className={internalBadgeClass + " text-[9px] py-0 px-1.5 shrink-0"}><Building2 className="h-2.5 w-2.5 mr-0.5" />Intern</Badge>}
                         </div>
-                      )}
-                      {(() => {
-                        const worker = t.current_worker_id ? profiles.find(p => p.id === t.current_worker_id) : null;
-                        const mine = user && t.current_worker_id === user.id;
-                        return (
-                          <div className="flex items-center justify-between gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
-                            {worker ? (
-                              <span className="text-[10px] inline-flex items-center gap-1 text-success">
-                                <UserAvatar profile={worker} size={18} />
-                                <Hand className="h-3 w-3" /> Bezig: {worker.full_name ?? "—"}
-                              </span>
-                            ) : <span />}
-                            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => claimWorker(t.id, t.current_worker_id)}>
-                              {mine ? "Stop" : "Ik ben bezig"}
-                            </Button>
+                        {(t.projects?.name || t.customers) && (
+                          <div className="text-xs text-muted-foreground flex items-center gap-1.5 mb-2.5">
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+                            <span className="truncate">{t.projects?.name ?? customerLabel(t.customers)}</span>
+                            {t.projects?.name && t.customers && !tInternal && <span className="text-muted-foreground/60">· {customerLabel(t.customers)}</span>}
                           </div>
-                        );
-                      })()}
-                      <div className="flex gap-1 mt-2 pt-2 border-t" onClick={e=>e.stopPropagation()}>
-                        {STATUSES.filter(x => x !== s).map(x => (
-                          <Button key={x} variant="ghost" size="sm" className="h-6 text-[10px] px-2 flex-1" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
-                        ))}
+                        )}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge className={`${priorityColor[t.priority]} text-[10px] rounded-full px-2`}>{priorityLabel[t.priority]}</Badge>
+                          {t.deadline && (
+                            <span className={`text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${overdue ? "bg-destructive/10 text-destructive font-medium" : "bg-muted/60 text-muted-foreground"}`}>
+                              <CalIcon className="h-2.5 w-2.5" /> {fmtDate(t.deadline)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-dashed gap-2">
+                          {assignees.length > 0
+                            ? <UserAvatarStack profiles={assignees as any[]} size={22} />
+                            : <span className="text-[10px] text-muted-foreground italic">Niet toegewezen</span>}
+                          {worker && (
+                            <span className="text-[10px] inline-flex items-center gap-1 text-success bg-success/10 px-2 py-0.5 rounded-full">
+                              <span className="relative flex h-1.5 w-1.5">
+                                <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-75" />
+                                <span className="relative rounded-full h-1.5 w-1.5 bg-success" />
+                              </span>
+                              <span className="truncate max-w-[80px]">{worker.full_name?.split(" ")[0] ?? "—"}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e=>e.stopPropagation()}>
+                          <Button variant="ghost" size="sm" className="h-7 text-[10px] px-2 flex-1 rounded-lg" onClick={() => claimWorker(t.id, t.current_worker_id)}>
+                            {mine ? "Stop" : "Ik ben bezig"}
+                          </Button>
+                          {STATUSES.filter(x => x !== s).map(x => (
+                            <Button key={x} variant="ghost" size="sm" className="h-7 text-[10px] px-2 flex-1 rounded-lg" onClick={() => updateStatus(t.id, x)}>→ {statusLabel[x]}</Button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );})}
-                  {filtered.filter(t => t.status === s).length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Geen taken</p>}
+                  {colTasks.length === 0 && (
+                    <div className="text-xs text-muted-foreground text-center py-10 border border-dashed rounded-xl">
+                      Geen taken
+                    </div>
+                  )}
                 </div>
-              </Card>
-            ))}
+              </div>
+            );})}
           </div>
         </TabsContent>
 
-        <TabsContent value="list">
-          <Card className="overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="text-left p-3">Titel</th><th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Prioriteit</th><th className="text-left p-3">Deadline</th>
-                  <th className="text-left p-3">Klant</th><th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Geen taken</td></tr>}
-                {filtered.map(t => (
-                  <tr key={t.id} className="border-t hover:bg-accent/30">
-                    <td className="p-3 font-medium">{t.title}</td>
-                    <td className="p-3"><Badge className={statusColor[t.status]}>{statusLabel[t.status]}</Badge></td>
-                    <td className="p-3"><Badge className={priorityColor[t.priority]}>{priorityLabel[t.priority]}</Badge></td>
-                    <td className="p-3">{t.deadline ? <span className={isOverdue(t.deadline,t.status)?"text-destructive":""}>{fmtDate(t.deadline)}</span> : "—"}</td>
-                    <td className="p-3 text-muted-foreground">{t.customers ? customerLabel(t.customers) : "—"}</td>
-                    <td className="p-3 text-right">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => deleteTask(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+        <TabsContent value="list" className="mt-4">
+          <div className="space-y-2">
+            {filtered.length === 0 && (
+              <Card className="p-12 text-center text-muted-foreground rounded-2xl shadow-soft">Geen taken</Card>
+            )}
+            {filtered.map(t => {
+              const assignees = ((t.assignee_ids ?? []) as string[]).map(id => profiles.find(p => p.id === id)).filter(Boolean);
+              const tInternal = isInternalProject(t.projects);
+              const accent = tInternal ? INTERNAL_PURPLE : (t.customers?.color || "hsl(220 9% 60%)");
+              const overdue = isOverdue(t.deadline, t.status);
+              const worker = t.current_worker_id ? profiles.find(p => p.id === t.current_worker_id) : null;
+              return (
+                <Card key={t.id} className="relative overflow-hidden p-4 rounded-2xl shadow-soft hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => { setEditing(t); setOpen(true); }}>
+                  <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
+                  <div className="pl-2 flex items-center gap-4 flex-wrap">
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm">{t.title}</h4>
+                        {tInternal && <Badge className={internalBadgeClass + " text-[9px] py-0 px-1.5"}><Building2 className="h-2.5 w-2.5 mr-0.5" />Intern</Badge>}
+                      </div>
+                      {(t.projects?.name || t.customers) && (
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+                          <span>{t.projects?.name ?? customerLabel(t.customers)}</span>
+                          {t.projects?.name && t.customers && !tInternal && <span className="text-muted-foreground/60">· {customerLabel(t.customers)}</span>}
+                        </div>
+                      )}
+                    </div>
+                    <Badge className={`${statusColor[t.status]} rounded-full text-[10px] px-2.5`}>{statusLabel[t.status]}</Badge>
+                    <Badge className={`${priorityColor[t.priority]} rounded-full text-[10px] px-2.5`}>{priorityLabel[t.priority]}</Badge>
+                    {t.deadline && (
+                      <span className={`text-xs inline-flex items-center gap-1 px-2.5 py-1 rounded-full ${overdue ? "bg-destructive/10 text-destructive font-medium" : "bg-muted/60 text-muted-foreground"}`}>
+                        <CalIcon className="h-3 w-3" /> {fmtDate(t.deadline)}
+                      </span>
+                    )}
+                    {assignees.length > 0 && <UserAvatarStack profiles={assignees as any[]} size={24} />}
+                    {worker && (
+                      <span className="text-[10px] inline-flex items-center gap-1 text-success bg-success/10 px-2 py-1 rounded-full">
+                        <Hand className="h-3 w-3" /> {worker.full_name?.split(" ")[0] ?? "—"}
+                      </span>
+                    )}
+                    <div className="flex gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => deleteTask(t.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
+        <TaskDialog key={editing?.id ?? "new"} task={editing} customers={customers} profiles={profiles} projects={projects} userId={user?.id ?? null} onClose={() => { setOpen(false); setEditing(null); }} />
+      </Dialog>
+    </div>
+  );
+}
+
+function StatTile({ icon, label, value, tint, alert }: { icon: React.ReactNode; label: string; value: number; tint: string; alert?: boolean }) {
+  return (
+    <div className={`rounded-2xl border bg-card/70 backdrop-blur p-4 shadow-soft transition-all hover:shadow-md ${alert ? "ring-1 ring-destructive/40" : ""}`}>
+      <div className="flex items-center gap-2.5">
+        <span className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${tint}1f`, color: tint }}>
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <div className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{label}</div>
+          <div className="text-2xl font-display font-semibold leading-none mt-1">{value}</div>
+        </div>
+      </div>
     </div>
   );
 }

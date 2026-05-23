@@ -258,6 +258,115 @@ function SettingsPage() {
   );
 }
 
+function PushPreferencesCard() {
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<any>({ push_enabled: true, tasks: true, appointments: true, chat_mentions: true, follow_ups: true });
+  const [loaded, setLoaded] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isiOS, setIsiOS] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ua = navigator.userAgent;
+    setIsiOS(/iPad|iPhone|iPod/.test(ua));
+    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("push_preferences" as any).select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) setPrefs(data);
+      setLoaded(true);
+    });
+  }, [user]);
+
+  async function update(patch: any) {
+    if (!user) return;
+    const next = { ...prefs, ...patch };
+    setPrefs(next);
+    const { error } = await supabase.from("push_preferences" as any).upsert({ user_id: user.id, ...next });
+    if (error) toast.error(error.message);
+  }
+
+  async function enablePush() {
+    try {
+      const OS = (window as any).OneSignal;
+      if (!OS) return toast.error("Push systeem nog niet geladen, probeer over een paar seconden opnieuw");
+      await OS.Notifications.requestPermission();
+      setPermission(Notification.permission);
+      if (Notification.permission === "granted") toast.success("Push notificaties geactiveerd");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Activeren mislukt");
+    }
+  }
+
+  async function sendTest() {
+    if (!user) return;
+    const { error } = await supabase.from("notifications").insert({
+      user_id: user.id, type: "task_assigned", title: "Test melding", body: "Push notificaties werken 🎉", link: "/dashboard",
+    } as any);
+    if (error) toast.error(error.message); else toast.success("Test verstuurd");
+  }
+
+  const needsInstall = isiOS && !isStandalone;
+
+  return (
+    <Card className="p-6 space-y-5">
+      <div>
+        <h2 className="font-display font-semibold">Push notificaties</h2>
+        <p className="text-xs text-muted-foreground mt-1">Ontvang meldingen op je toestel, ook wanneer de app gesloten is.</p>
+      </div>
+
+      {needsInstall && (
+        <div className="rounded-lg border border-primary/30 bg-gradient-brand-soft p-3 text-sm">
+          <div className="font-medium">Installeer de app op je iPhone</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Voor push op iOS: tik in Safari op <span className="font-medium">Delen</span> → <span className="font-medium">Zet op beginscherm</span>. Open daarna de app vanaf je beginscherm en activeer meldingen hier.
+          </p>
+        </div>
+      )}
+
+      {!needsInstall && permission !== "granted" && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+          <div className="text-sm">
+            <div className="font-medium">Push staat uit op dit toestel</div>
+            <p className="text-xs text-muted-foreground">Sta meldingen toe om pushes te ontvangen.</p>
+          </div>
+          <Button onClick={enablePush} className="bg-gradient-brand border-0">Activeren</Button>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div><Label>Push notificaties aan</Label><p className="text-xs text-muted-foreground">Hoofdschakelaar voor alle pushes</p></div>
+          <Switch checked={!!prefs.push_enabled} onCheckedChange={(v) => update({ push_enabled: v })} disabled={!loaded} />
+        </div>
+        <div className="border-t pt-3 space-y-3 opacity-100">
+          {[
+            { k: "tasks", label: "Taken", desc: "Nieuwe taak toegewezen of gestart" },
+            { k: "appointments", label: "Agenda", desc: "Uitnodigingen en herinneringen" },
+            { k: "chat_mentions", label: "Chat vermeldingen", desc: "Wanneer iemand je @mentioned" },
+            { k: "follow_ups", label: "Klant follow-ups", desc: "Wanneer een follow-up moment bereikt is" },
+          ].map(row => (
+            <div key={row.k} className="flex items-center justify-between">
+              <div><Label>{row.label}</Label><p className="text-xs text-muted-foreground">{row.desc}</p></div>
+              <Switch checked={!!prefs[row.k]} onCheckedChange={(v) => update({ [row.k]: v })} disabled={!loaded || !prefs.push_enabled} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="border-t pt-3">
+        <Button variant="outline" onClick={sendTest}>Stuur test melding</Button>
+      </div>
+    </Card>
+  );
+}
+
+
 function ApptTypesManager() {
   const [items, setItems] = useState<any[]>([]);
   const [form, setForm] = useState({ label: "", color: "#3b82f6" });

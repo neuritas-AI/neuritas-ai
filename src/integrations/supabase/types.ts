@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      academy_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       activity_log: {
         Row: {
           action: string
@@ -46,6 +79,7 @@ export type Database = {
       }
       ai_academy_items: {
         Row: {
+          category_id: string | null
           created_at: string
           created_by: string | null
           description: string | null
@@ -58,6 +92,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -70,6 +105,7 @@ export type Database = {
           title: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
@@ -81,7 +117,15 @@ export type Database = {
           storage_path?: string | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_academy_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "academy_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       appointment_attendance: {
         Row: {

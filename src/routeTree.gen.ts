@@ -22,6 +22,7 @@ import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAcademyRouteImport } from './routes/_app/academy'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
+import { Route as ApiPublicPushNotifyRouteImport } from './routes/api/public/push-notify'
 import { Route as AppProjectsIdRouteImport } from './routes/_app/projects/$id'
 import { Route as AppCustomersIdRouteImport } from './routes/_app/customers/$id'
 
@@ -89,6 +90,11 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicPushNotifyRoute = ApiPublicPushNotifyRouteImport.update({
+  id: '/api/public/push-notify',
+  path: '/api/public/push-notify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AppTasksRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
+  '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
   '/customers/': typeof AppCustomersIndexRoute
   '/projects/': typeof AppProjectsIndexRoute
 }
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/tasks': typeof AppTasksRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
+  '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
   '/customers': typeof AppCustomersIndexRoute
   '/projects': typeof AppProjectsIndexRoute
 }
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_app/tasks': typeof AppTasksRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
+  '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/projects/': typeof AppProjectsIndexRoute
 }
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/customers/$id'
     | '/projects/$id'
+    | '/api/public/push-notify'
     | '/customers/'
     | '/projects/'
   fileRoutesByTo: FileRoutesByTo
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/tasks'
     | '/customers/$id'
     | '/projects/$id'
+    | '/api/public/push-notify'
     | '/customers'
     | '/projects'
   id:
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/_app/tasks'
     | '/_app/customers/$id'
     | '/_app/projects/$id'
+    | '/api/public/push-notify'
     | '/_app/customers/'
     | '/_app/projects/'
   fileRoutesById: FileRoutesById
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicPushNotifyRoute: typeof ApiPublicPushNotifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,6 +314,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/push-notify': {
+      id: '/api/public/push-notify'
+      path: '/api/public/push-notify'
+      fullPath: '/api/public/push-notify'
+      preLoaderRoute: typeof ApiPublicPushNotifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/projects/$id': {
       id: '/_app/projects/$id'
       path: '/projects/$id'
@@ -354,17 +374,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicPushNotifyRoute: ApiPublicPushNotifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

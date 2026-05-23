@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { initOneSignal } from "@/lib/onesignal";
 
 type AuthCtx = {
   user: User | null;
@@ -19,10 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       setLoading(false);
+      initOneSignal(s?.user?.id ?? null);
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      initOneSignal(data.session?.user?.id ?? null);
     });
     return () => subscription.unsubscribe();
   }, []);

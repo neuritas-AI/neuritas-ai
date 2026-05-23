@@ -127,6 +127,24 @@ export type Database = {
           },
         ]
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       appointment_attendance: {
         Row: {
           appointment_id: string
@@ -664,6 +682,36 @@ export type Database = {
           },
         ]
       }
+      push_preferences: {
+        Row: {
+          appointments: boolean
+          chat_mentions: boolean
+          follow_ups: boolean
+          push_enabled: boolean
+          tasks: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointments?: boolean
+          chat_mentions?: boolean
+          follow_ups?: boolean
+          push_enabled?: boolean
+          tasks?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointments?: boolean
+          chat_mentions?: boolean
+          follow_ups?: boolean
+          push_enabled?: boolean
+          tasks?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           amount: number
@@ -921,6 +969,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      dispatch_follow_ups: { Args: never; Returns: undefined }
       dispatch_reminders: { Args: never; Returns: undefined }
       has_permission: {
         Args: { _perm: string; _uid: string }

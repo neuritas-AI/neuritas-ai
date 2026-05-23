@@ -134,6 +134,7 @@ function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Profiel</TabsTrigger>
           <TabsTrigger value="display">Weergave</TabsTrigger>
+          <TabsTrigger value="notifs">Meldingen</TabsTrigger>
           {isAdmin && <TabsTrigger value="team">Team</TabsTrigger>}
           {isAdmin && <TabsTrigger value="permissions">Gebruikersbeheer</TabsTrigger>}
           {isAdmin && <TabsTrigger value="appttypes">Agenda types</TabsTrigger>}
@@ -174,6 +175,11 @@ function SettingsPage() {
             </div>
           </Card>
         </TabsContent>
+
+        <TabsContent value="notifs" className="mt-5">
+          <PushPreferencesCard />
+        </TabsContent>
+
 
         {isAdmin && (
           <TabsContent value="team" className="mt-5">

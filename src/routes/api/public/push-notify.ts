@@ -3,13 +3,15 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ONESIGNAL_APP_ID = "b88657e9-c937-4487-8cb2-2d833b434f21";
 
-const TYPE_TO_PREF: Record<string, "tasks" | "appointments" | "chat_mentions" | "follow_ups"> = {
+const TYPE_TO_PREF: Record<string, "tasks" | "appointments" | "chat_mentions" | "follow_ups" | "morning_motivation" | "daily_motivation"> = {
   task_assigned: "tasks",
   task_updated: "tasks",
   internal_invite: "appointments",
   appt_reminder: "appointments",
   chat_mention: "chat_mentions",
   follow_up: "follow_ups",
+  morning_quote: "morning_motivation",
+  motivation_quote: "daily_motivation",
 };
 
 export const Route = createFileRoute("/api/public/push-notify")({

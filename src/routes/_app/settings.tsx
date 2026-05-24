@@ -260,7 +260,7 @@ function SettingsPage() {
 
 function PushPreferencesCard() {
   const { user } = useAuth();
-  const [prefs, setPrefs] = useState<any>({ push_enabled: true, tasks: true, appointments: true, chat_mentions: true, follow_ups: true });
+  const [prefs, setPrefs] = useState<any>({ push_enabled: true, tasks: true, appointments: true, chat_mentions: true, follow_ups: true, morning_motivation: true, daily_motivation: true });
   const [loaded, setLoaded] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"

@@ -350,6 +350,8 @@ function PushPreferencesCard() {
             { k: "appointments", label: "Agenda", desc: "Uitnodigingen en herinneringen" },
             { k: "chat_mentions", label: "Chat vermeldingen", desc: "Wanneer iemand je @mentioned" },
             { k: "follow_ups", label: "Klant follow-ups", desc: "Wanneer een follow-up moment bereikt is" },
+            { k: "morning_motivation", label: "Goedemorgen melding", desc: "Eén dagelijkse ochtendboost (07:30–08:30)" },
+            { k: "daily_motivation", label: "Motivatie van de dag", desc: "Eén korte productivity push (10:00–19:00)" },
           ].map(row => (
             <div key={row.k} className="flex items-center justify-between">
               <div><Label>{row.label}</Label><p className="text-xs text-muted-foreground">{row.desc}</p></div>

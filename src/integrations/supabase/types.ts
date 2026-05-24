@@ -372,6 +372,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_motivation_schedule: {
+        Row: {
+          created_at: string
+          day: string
+          morning_at: string | null
+          morning_quote_id: string | null
+          morning_sent: boolean
+          motivation_at: string | null
+          motivation_quote_id: string | null
+          motivation_sent: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          morning_at?: string | null
+          morning_quote_id?: string | null
+          morning_sent?: boolean
+          motivation_at?: string | null
+          motivation_quote_id?: string | null
+          motivation_sent?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          morning_at?: string | null
+          morning_quote_id?: string | null
+          morning_sent?: boolean
+          motivation_at?: string | null
+          motivation_quote_id?: string | null
+          motivation_sent?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       files: {
         Row: {
           appointment_id: string | null
@@ -508,6 +544,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      motivation_quotes: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          text?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -686,7 +743,9 @@ export type Database = {
         Row: {
           appointments: boolean
           chat_mentions: boolean
+          daily_motivation: boolean
           follow_ups: boolean
+          morning_motivation: boolean
           push_enabled: boolean
           tasks: boolean
           updated_at: string
@@ -695,7 +754,9 @@ export type Database = {
         Insert: {
           appointments?: boolean
           chat_mentions?: boolean
+          daily_motivation?: boolean
           follow_ups?: boolean
+          morning_motivation?: boolean
           push_enabled?: boolean
           tasks?: boolean
           updated_at?: string
@@ -704,7 +765,9 @@ export type Database = {
         Update: {
           appointments?: boolean
           chat_mentions?: boolean
+          daily_motivation?: boolean
           follow_ups?: boolean
+          morning_motivation?: boolean
           push_enabled?: boolean
           tasks?: boolean
           updated_at?: string
@@ -970,7 +1033,9 @@ export type Database = {
     Functions: {
       cleanup_old_notifications: { Args: never; Returns: undefined }
       dispatch_follow_ups: { Args: never; Returns: undefined }
+      dispatch_motivation_pushes: { Args: never; Returns: undefined }
       dispatch_reminders: { Args: never; Returns: undefined }
+      generate_daily_motivation_schedule: { Args: never; Returns: undefined }
       has_permission: {
         Args: { _perm: string; _uid: string }
         Returns: boolean

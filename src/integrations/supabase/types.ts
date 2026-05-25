@@ -1048,6 +1048,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _uid: string }; Returns: boolean }
+      send_test_notification: { Args: never; Returns: undefined }
       touch_activity: { Args: never; Returns: undefined }
     }
     Enums: {

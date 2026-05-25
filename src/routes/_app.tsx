@@ -115,7 +115,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen flex w-full bg-background">
-      <aside className="w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground hidden md:flex flex-col">
+      <aside className="w-64 shrink-0 border-r bg-sidebar text-sidebar-foreground hidden md:flex flex-col sticky top-0 h-screen self-start">
         {sidebarBody}
       </aside>
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

@@ -305,9 +305,7 @@ function PushPreferencesCard() {
 
   async function sendTest() {
     if (!user) return;
-    const { error } = await supabase.from("notifications").insert({
-      user_id: user.id, type: "task_assigned", title: "Test melding", body: "Push notificaties werken 🎉", link: "/dashboard",
-    } as any);
+    const { error } = await supabase.rpc("send_test_notification" as any);
     if (error) toast.error(error.message); else toast.success("Test verstuurd");
   }
 

@@ -14,7 +14,8 @@ import { statusLabel } from "@/lib/format";
 import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
-import { CUSTOMER_COLORS, customerAccent } from "@/lib/customer-colors";
+import { customerAccent } from "@/lib/customer-colors";
+import { ColorPicker } from "@/components/ColorPicker";
 import { CustomerStatusSelect } from "@/components/CustomerStatusSelect";
 
 export const Route = createFileRoute("/_app/customers/")({ component: CustomersPage });

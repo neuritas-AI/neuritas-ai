@@ -32,20 +32,11 @@ function dayLabel(d: Date) {
 
 function ChatPage() {
   const { user } = useAuth();
+  const { byId: profiles } = useProfiles();
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { full_name: string | null }>>({});
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  async function loadProfiles(ids: string[]) {
-    const missing = ids.filter(id => !(id in profiles));
-    if (missing.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", missing);
-    if (data) {
-      setProfiles(p => ({ ...p, ...Object.fromEntries(data.map((x: any) => [x.id, { full_name: x.full_name }])) }));
-    }
-  }
 
   useEffect(() => {
     if (!user) return;

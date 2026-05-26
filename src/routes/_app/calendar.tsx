@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, ChevronLeft, ChevronRight, Trash2, CheckSquare } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Trash2, CheckSquare, Clock, Users, Link2, Calendar as CalIcon } from "lucide-react";
 import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths, addWeeks, subWeeks } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -24,6 +24,13 @@ export const Route = createFileRoute("/_app/calendar")({
 
 type ApptType = { id: string; key: string; label: string; color: string; sort_order: number; requires_attendance?: boolean };
 const TASK_COLOR = "#f97316";
+
+// Convert hex to soft translucent surface for event chips
+function softBg(hex: string, alpha = 0.14) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return `${hex}22`;
+  return `rgba(${parseInt(m[1],16)}, ${parseInt(m[2],16)}, ${parseInt(m[3],16)}, ${alpha})`;
+}
 
 function CalendarPage() {
   const { user } = useAuth();
@@ -62,14 +69,12 @@ function CalendarPage() {
     return () => { supabase.removeChannel(ch); supabase.removeChannel(ch2); };
   }, []);
 
-  // open from notification deeplink
   useEffect(() => {
     if (!search.appt) return;
     const a = appts.find(x => x.id === search.appt);
     if (a) { setEditing(a); setOpen(true); }
   }, [search.appt, appts]);
 
-  // tasks visible to current user (assignee or admin)
   const visibleTasks = useMemo(() => tasks.filter(t => {
     if (isAdmin) return true;
     if (!user) return false;
@@ -100,71 +105,115 @@ function CalendarPage() {
     return [...dayAppts, ...dayTasks].sort((a,b) => a.time - b.time);
   }
 
+  const eventChipClass = "w-full text-left text-[11px] px-2 py-1.5 rounded-md border transition-all hover:translate-x-0.5 hover:shadow-soft";
+
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-display font-semibold">Agenda</h1>
-          <p className="text-muted-foreground text-sm">Plan en bekijk afspraken</p>
+          <h1 className="text-3xl font-display font-semibold tracking-tight">Agenda</h1>
+          <p className="text-muted-foreground text-sm mt-1">Plan en bekijk afspraken</p>
         </div>
         <Dialog open={open} onOpenChange={(o)=>{setOpen(o); if(!o)setEditing(null);}}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-brand border-0 shadow-brand"><Plus className="h-4 w-4 mr-1" /> Nieuwe afspraak</Button>
+          </DialogTrigger>
           <ApptDialog key={editing?.id ?? "new"} appt={editing} customers={customers} projects={projects} profiles={profiles} userId={user?.id ?? null} isAdmin={isAdmin} types={types} defaultDate={cursor} onClose={()=>{setOpen(false); setEditing(null); load();}} />
         </Dialog>
       </div>
 
-      <Card className="p-3 flex flex-wrap gap-x-4 gap-y-2 items-center text-xs">
-        <span className="font-medium text-muted-foreground">Legenda:</span>
+      <Card className="p-3.5 shadow-soft border-border/60 flex flex-wrap gap-x-5 gap-y-2 items-center text-xs">
+        <span className="font-medium text-muted-foreground uppercase tracking-wider text-[10px]">Legenda</span>
         {types.map(t => (
           <span key={t.key} className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-full" style={{ background: t.color }} />
+            <span className="h-2.5 w-2.5 rounded-full ring-2" style={{ background: t.color, boxShadow: `0 0 0 2px ${softBg(t.color, 0.2)}` }} />
             {t.label}
           </span>
         ))}
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-full" style={{ background: TASK_COLOR }} />
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: TASK_COLOR, boxShadow: `0 0 0 2px ${softBg(TASK_COLOR, 0.2)}` }} />
           Taak deadline
         </span>
       </Card>
 
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+      <Card className="p-5 shadow-soft border-border/60">
+        <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={()=>move(-1)}><ChevronLeft className="h-4 w-4" /></Button>
-            <Button variant="outline" size="sm" onClick={()=>setCursor(new Date())}>Vandaag</Button>
-            <Button variant="outline" size="icon" onClick={()=>move(1)}><ChevronRight className="h-4 w-4" /></Button>
-            <h2 className="font-display font-semibold ml-2 capitalize">{format(cursor, view==="day"?"d MMMM yyyy":"MMMM yyyy", { locale: nl })}</h2>
+            <Button variant="outline" size="icon" onClick={()=>move(-1)} className="h-9 w-9 rounded-lg"><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="sm" onClick={()=>setCursor(new Date())} className="h-9 rounded-lg">Vandaag</Button>
+            <Button variant="outline" size="icon" onClick={()=>move(1)} className="h-9 w-9 rounded-lg"><ChevronRight className="h-4 w-4" /></Button>
+            <h2 className="font-display font-semibold ml-2 capitalize text-lg tracking-tight">
+              {format(cursor, view==="day"?"EEEE d MMMM yyyy":"MMMM yyyy", { locale: nl })}
+            </h2>
           </div>
-          <div className="flex gap-1">
+          <div className="inline-flex bg-muted/60 p-1 rounded-lg">
             {(["month","week","day"] as const).map(v => (
-              <Button key={v} variant={view===v?"default":"outline"} size="sm" onClick={()=>setView(v)}>
+              <button
+                key={v}
+                onClick={()=>setView(v)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  view===v ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
                 {v==="month"?"Maand":v==="week"?"Week":"Dag"}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
 
         {view === "month" && (
-          <div className="grid grid-cols-7 gap-px bg-border rounded-md overflow-hidden">
+          <div className="grid grid-cols-7 gap-1.5">
             {["Ma","Di","Wo","Do","Vr","Za","Zo"].map(d => (
-              <div key={d} className="bg-muted p-2 text-xs font-medium text-center">{d}</div>
+              <div key={d} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">{d}</div>
             ))}
             {days.map(d => {
               const items = dayItems(d);
+              const today = isSameDay(d, new Date());
+              const outside = !isSameMonth(d, cursor);
               return (
-                <div key={d.toISOString()} className={`bg-card min-h-24 p-1.5 ${!isSameMonth(d, cursor) ? "opacity-40" : ""} ${isSameDay(d, new Date()) ? "ring-2 ring-primary ring-inset" : ""}`}>
-                  <div className="text-xs font-medium mb-1">{format(d, "d")}</div>
-                  <div className="space-y-0.5">
+                <div
+                  key={d.toISOString()}
+                  className={`bg-card rounded-lg border min-h-28 p-2 transition-colors ${
+                    outside ? "opacity-40" : ""
+                  } ${today ? "border-primary/50 bg-primary/[0.03]" : "border-border/60 hover:border-border"}`}
+                >
+                  <div className={`text-xs font-semibold mb-1.5 inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-md ${
+                    today ? "bg-primary text-primary-foreground" : "text-foreground"
+                  }`}>
+                    {format(d, "d")}
+                  </div>
+                  <div className="space-y-1">
                     {items.slice(0,3).map(x => x.kind === "appt" ? (
-                      <button key={"a"+x.item.id} onClick={()=>{setEditing(x.item); setOpen(true);}} className="w-full text-left text-[10px] p-1 rounded truncate text-white" style={{ background: colorFor(x.item) }}>
-                        {fmtTime(x.item.start_at)} {x.item.title}
+                      <button
+                        key={"a"+x.item.id}
+                        onClick={()=>{setEditing(x.item); setOpen(true);}}
+                        className={`${eventChipClass} truncate`}
+                        style={{
+                          background: softBg(colorFor(x.item)),
+                          borderColor: softBg(colorFor(x.item), 0.3),
+                          borderLeft: `3px solid ${colorFor(x.item)}`,
+                        }}
+                      >
+                        <span className="font-medium opacity-70 mr-1">{fmtTime(x.item.start_at)}</span>
+                        {x.item.title}
                       </button>
                     ) : (
-                      <div key={"t"+x.item.id} className="w-full text-left text-[10px] p-1 rounded truncate text-white inline-flex items-center gap-1" style={{ background: TASK_COLOR }} title={"Taak: " + x.item.title}>
-                        <CheckSquare className="h-2.5 w-2.5 shrink-0" />{fmtTime(x.item.deadline)} {x.item.title}
+                      <div
+                        key={"t"+x.item.id}
+                        className={`${eventChipClass} truncate inline-flex items-center gap-1`}
+                        style={{
+                          background: softBg(TASK_COLOR),
+                          borderColor: softBg(TASK_COLOR, 0.3),
+                          borderLeft: `3px solid ${TASK_COLOR}`,
+                        }}
+                        title={"Taak: " + x.item.title}
+                      >
+                        <CheckSquare className="h-2.5 w-2.5 shrink-0" />
+                        <span className="font-medium opacity-70">{fmtTime(x.item.deadline)}</span>
+                        <span className="truncate">{x.item.title}</span>
                       </div>
                     ))}
-                    {items.length > 3 && <div className="text-[10px] text-muted-foreground">+{items.length-3} meer</div>}
+                    {items.length > 3 && <div className="text-[10px] text-muted-foreground pl-1">+{items.length-3} meer</div>}
                   </div>
                 </div>
               );
@@ -173,24 +222,63 @@ function CalendarPage() {
         )}
 
         {(view === "week" || view === "day") && (
-          <div className={`grid gap-3 ${view==="week"?"grid-cols-7":"grid-cols-1"}`}>
+          <div className={`grid gap-3 ${view==="week"?"grid-cols-1 md:grid-cols-7":"grid-cols-1"}`}>
             {days.map(d => {
               const items = dayItems(d);
+              const today = isSameDay(d, new Date());
               return (
-                <div key={d.toISOString()} className="border rounded-md p-3 min-h-64">
-                  <div className="text-sm font-display font-semibold capitalize mb-2">{format(d, "EEE d MMM", { locale: nl })}</div>
-                  <div className="space-y-2">
-                    {items.length === 0 && <p className="text-xs text-muted-foreground">Geen afspraken</p>}
+                <div
+                  key={d.toISOString()}
+                  className={`rounded-xl border p-3 min-h-64 transition-colors ${
+                    today ? "border-primary/50 bg-primary/[0.03]" : "border-border/60 bg-card"
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between mb-3">
+                    <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      {format(d, "EEE", { locale: nl })}
+                    </div>
+                    <div className={`text-xl font-display font-semibold tracking-tight ${today ? "text-primary" : ""}`}>
+                      {format(d, "d")}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {items.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic py-2">Geen afspraken</p>
+                    )}
                     {items.map(x => x.kind === "appt" ? (
-                      <button key={"a"+x.item.id} onClick={()=>{setEditing(x.item); setOpen(true);}} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: colorFor(x.item) }}>
-                        <div className="font-medium">{x.item.title}</div>
-                        <div>{fmtTime(x.item.start_at)} – {fmtTime(x.item.end_at)}</div>
-                        {x.item.customers && <div className="opacity-80">{customerLabel(x.item.customers)}</div>}
+                      <button
+                        key={"a"+x.item.id}
+                        onClick={()=>{setEditing(x.item); setOpen(true);}}
+                        className="w-full text-left p-2.5 rounded-lg border transition-all hover:shadow-soft hover:-translate-y-0.5"
+                        style={{
+                          background: softBg(colorFor(x.item)),
+                          borderColor: softBg(colorFor(x.item), 0.3),
+                          borderLeft: `3px solid ${colorFor(x.item)}`,
+                        }}
+                      >
+                        <div className="font-medium text-xs text-foreground line-clamp-2">{x.item.title}</div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {fmtTime(x.item.start_at)} – {fmtTime(x.item.end_at)}
+                        </div>
+                        {x.item.customers && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{customerLabel(x.item.customers)}</div>
+                        )}
                       </button>
                     ) : (
-                      <div key={"t"+x.item.id} className="w-full text-left p-2 rounded text-white text-xs" style={{ background: TASK_COLOR }}>
-                        <div className="font-medium inline-flex items-center gap-1"><CheckSquare className="h-3 w-3" /> {x.item.title}</div>
-                        <div className="opacity-90">Deadline {fmtTime(x.item.deadline)}</div>
+                      <div
+                        key={"t"+x.item.id}
+                        className="w-full text-left p-2.5 rounded-lg border"
+                        style={{
+                          background: softBg(TASK_COLOR),
+                          borderColor: softBg(TASK_COLOR, 0.3),
+                          borderLeft: `3px solid ${TASK_COLOR}`,
+                        }}
+                      >
+                        <div className="font-medium text-xs text-foreground inline-flex items-center gap-1">
+                          <CheckSquare className="h-3 w-3" /> {x.item.title}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">Deadline {fmtTime(x.item.deadline)}</div>
                       </div>
                     ))}
                   </div>
@@ -233,6 +321,7 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
   const requiresAttendance = !!currentType?.requires_attendance;
   const isNew = !appt;
   const blockedNew = isNew && requiresAttendance && !isAdmin;
+  const headerColor = TYPE_COLOR[form.appointment_type] ?? "#3b82f6";
 
   useEffect(() => {
     if (!appt) { setAttendance([]); return; }
@@ -269,10 +358,9 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
       project_id: form.link_type === "project" ? (form.project_id || null) : null,
       participants: requiresAttendance ? form.participants : (appt?.participants ?? (userId ? [userId] : [])),
     };
-    // Bij project: klant automatisch afleiden van project (handig voor overzicht), maar primaire koppeling blijft project
     if (form.link_type === "project" && form.project_id) {
       const p = projects.find((x: any) => x.id === form.project_id);
-      if (p?.customer_id) payload.customer_id = null; // strikt: nooit beide
+      if (p?.customer_id) payload.customer_id = null;
     }
     if (!appt) { payload.created_by = userId; }
     const { error } = appt
@@ -288,21 +376,50 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
   }
 
   const statusFor = (uid: string) => attendance.find(a => a.user_id === uid)?.status ?? "pending";
-  const statusColor = (s: string) => s === "accepted" ? "bg-success/20 text-success" : s === "declined" ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground";
+  const statusColor = (s: string) => s === "accepted" ? "bg-success/15 text-success border-success/20" : s === "declined" ? "bg-destructive/15 text-destructive border-destructive/20" : "bg-muted text-muted-foreground border-border";
   const statusLabel = (s: string) => s === "accepted" ? "Aanwezig" : s === "declined" ? "Niet aanwezig" : "Geen reactie";
   const myStatus = userId ? statusFor(userId) : "pending";
 
   return (
-    <DialogContent className="max-h-[90vh] overflow-y-auto">
-      <DialogHeader><DialogTitle>{appt?"Afspraak bewerken":"Nieuwe afspraak"}</DialogTitle></DialogHeader>
-      <div className="space-y-3">
-        <div><Label>Titel</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
-        <div><Label>Beschrijving</Label><Textarea rows={2} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div><Label>Start</Label><Input type="datetime-local" value={form.start_at} onChange={e=>setForm({...form,start_at:e.target.value})} /></div>
-          <div><Label>Einde</Label><Input type="datetime-local" value={form.end_at} onChange={e=>setForm({...form,end_at:e.target.value})} /></div>
+    <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-lg">
+      <div
+        className="px-6 pt-6 pb-5 border-b"
+        style={{
+          background: `linear-gradient(135deg, ${softBg(headerColor, 0.18)}, ${softBg(headerColor, 0.05)})`,
+          borderColor: softBg(headerColor, 0.25),
+        }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: headerColor }} />
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+            {currentType?.label ?? "Afspraak"}
+          </span>
         </div>
-        <div><Label>Type afspraak</Label>
+        <DialogHeader className="p-0 text-left">
+          <DialogTitle className="text-xl font-display tracking-tight">
+            {appt ? "Afspraak bewerken" : "Nieuwe afspraak"}
+          </DialogTitle>
+        </DialogHeader>
+      </div>
+
+      <div className="px-6 py-5 space-y-5">
+        <div className="space-y-3">
+          <div><Label>Titel</Label><Input value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></div>
+          <div><Label>Beschrijving</Label><Textarea rows={2} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} /></div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+            <CalIcon className="h-3 w-3" /> Tijd
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Start</Label><Input type="datetime-local" value={form.start_at} onChange={e=>setForm({...form,start_at:e.target.value})} /></div>
+            <div><Label>Einde</Label><Input type="datetime-local" value={form.end_at} onChange={e=>setForm({...form,end_at:e.target.value})} /></div>
+          </div>
+        </div>
+
+        <div>
+          <Label>Type afspraak</Label>
           <Select value={form.appointment_type} onValueChange={v=>setForm({...form, appointment_type: v})}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -321,6 +438,9 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
 
         {!requiresAttendance && (
           <div className="space-y-3">
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Link2 className="h-3 w-3" /> Koppeling
+            </div>
             <div>
               <Label>Koppelen aan</Label>
               <Select value={form.link_type} onValueChange={(v: any)=>setForm({...form, link_type: v, customer_id: "", project_id: ""})}>
@@ -354,31 +474,33 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
 
         {requiresAttendance && (
           <div className="space-y-2">
-            <Label>Deelnemers</Label>
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Users className="h-3 w-3" /> Deelnemers
+            </div>
             {(isAdmin || isNew) ? (
-              <div className="border rounded-md p-2 max-h-44 overflow-y-auto space-y-1">
+              <div className="border border-border/60 rounded-lg p-2 max-h-44 overflow-y-auto space-y-0.5 bg-muted/30">
                 {profiles.map((p:any) => {
                   const checked = form.participants.includes(p.id);
                   const st = appt ? statusFor(p.id) : null;
                   return (
-                    <label key={p.id} className="flex items-center gap-2 text-sm py-1 cursor-pointer">
+                    <label key={p.id} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded-md hover:bg-card cursor-pointer transition-colors">
                       <input type="checkbox" checked={checked} onChange={()=>toggleParticipant(p.id)} disabled={!isAdmin && !isNew} />
                       <span className="flex-1">{p.full_name ?? p.id.slice(0,8)}</span>
-                      {st && checked && <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColor(st)}`}>{statusLabel(st)}</span>}
+                      {st && checked && <span className={`text-[10px] px-2 py-0.5 rounded-full border ${statusColor(st)}`}>{statusLabel(st)}</span>}
                     </label>
                   );
                 })}
-                {profiles.length === 0 && <p className="text-xs text-muted-foreground">Geen gebruikers gevonden</p>}
+                {profiles.length === 0 && <p className="text-xs text-muted-foreground p-2">Geen gebruikers gevonden</p>}
               </div>
             ) : (
-              <div className="border rounded-md p-2 space-y-1">
+              <div className="border border-border/60 rounded-lg p-2 space-y-0.5 bg-muted/30">
                 {form.participants.map((uid:string) => {
                   const p = profiles.find((x:any)=>x.id===uid);
                   const st = statusFor(uid);
                   return (
-                    <div key={uid} className="flex items-center justify-between text-sm py-1">
+                    <div key={uid} className="flex items-center justify-between text-sm py-1.5 px-2">
                       <span>{p?.full_name ?? uid.slice(0,8)}</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColor(st)}`}>{statusLabel(st)}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${statusColor(st)}`}>{statusLabel(st)}</span>
                     </div>
                   );
                 })}
@@ -394,10 +516,11 @@ function ApptDialog({ appt, customers, projects, profiles, userId, isAdmin, type
           </div>
         )}
       </div>
-      <DialogFooter className="gap-2">
+
+      <DialogFooter className="px-6 py-4 border-t bg-muted/30 gap-2">
         {appt && <Button variant="destructive" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}
         <Button variant="ghost" onClick={onClose}>Annuleren</Button>
-        <Button onClick={save} disabled={blockedNew}>Opslaan</Button>
+        <Button onClick={save} disabled={blockedNew} className="bg-gradient-brand border-0">Opslaan</Button>
       </DialogFooter>
     </DialogContent>
   );

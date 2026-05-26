@@ -156,11 +156,7 @@ function ChatPage() {
                   const all = [item.first, ...item.rest];
                   return (
                     <div key={ii} className={`flex gap-2.5 sm:gap-3 ${mine ? "flex-row-reverse" : ""}`}>
-                      <div className={`h-9 w-9 shrink-0 rounded-full grid place-items-center text-white text-[11px] font-semibold shadow-soft ${
-                        mine ? "bg-gradient-brand" : "bg-gradient-to-br from-slate-500 to-slate-700"
-                      }`}>
-                        {initials(item.author)}
-                      </div>
+                      <UserAvatar userId={item.author} size={36} className="shadow-soft" />
                       <div className={`min-w-0 flex flex-col gap-1 max-w-[78%] sm:max-w-[70%] ${mine ? "items-end" : "items-start"}`}>
                         <div className={`flex items-baseline gap-2 px-1 ${mine ? "flex-row-reverse" : ""}`}>
                           <span className="text-xs font-semibold">{nameOf(item.author)}</span>

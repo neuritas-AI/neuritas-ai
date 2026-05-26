@@ -10,6 +10,8 @@ import { Send, Trash2, MessagesSquare } from "lucide-react";
 import { format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useProfiles } from "@/lib/profiles";
 
 export const Route = createFileRoute("/_app/chat")({ component: ChatPage });
 
@@ -30,27 +32,17 @@ function dayLabel(d: Date) {
 
 function ChatPage() {
   const { user } = useAuth();
+  const { byId: profiles } = useProfiles();
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { full_name: string | null }>>({});
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  async function loadProfiles(ids: string[]) {
-    const missing = ids.filter(id => !(id in profiles));
-    if (missing.length === 0) return;
-    const { data } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", missing);
-    if (data) {
-      setProfiles(p => ({ ...p, ...Object.fromEntries(data.map((x: any) => [x.id, { full_name: x.full_name }])) }));
-    }
-  }
 
   useEffect(() => {
     if (!user) return;
     supabase.from("chat_messages").select("*").order("created_at", { ascending: true }).limit(200).then(({ data }) => {
       const list = (data ?? []) as Msg[];
       setMessages(list);
-      loadProfiles([...new Set(list.map(m => m.user_id))]);
     });
     supabase.from("notifications").update({ read: true }).eq("type", "chat").eq("read", false).then(() => {});
 
@@ -58,7 +50,6 @@ function ChatPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
         const m = payload.new as Msg;
         setMessages(prev => [...prev, m]);
-        loadProfiles([m.user_id]);
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages" }, (payload) => {
         setMessages(prev => prev.filter(x => x.id !== (payload.old as any).id));
@@ -165,11 +156,7 @@ function ChatPage() {
                   const all = [item.first, ...item.rest];
                   return (
                     <div key={ii} className={`flex gap-2.5 sm:gap-3 ${mine ? "flex-row-reverse" : ""}`}>
-                      <div className={`h-9 w-9 shrink-0 rounded-full grid place-items-center text-white text-[11px] font-semibold shadow-soft ${
-                        mine ? "bg-gradient-brand" : "bg-gradient-to-br from-slate-500 to-slate-700"
-                      }`}>
-                        {initials(item.author)}
-                      </div>
+                      <UserAvatar userId={item.author} size={36} className="shadow-soft" />
                       <div className={`min-w-0 flex flex-col gap-1 max-w-[78%] sm:max-w-[70%] ${mine ? "items-end" : "items-start"}`}>
                         <div className={`flex items-baseline gap-2 px-1 ${mine ? "flex-row-reverse" : ""}`}>
                           <span className="text-xs font-semibold">{nameOf(item.author)}</span>

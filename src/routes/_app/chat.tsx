@@ -43,7 +43,6 @@ function ChatPage() {
     supabase.from("chat_messages").select("*").order("created_at", { ascending: true }).limit(200).then(({ data }) => {
       const list = (data ?? []) as Msg[];
       setMessages(list);
-      loadProfiles([...new Set(list.map(m => m.user_id))]);
     });
     supabase.from("notifications").update({ read: true }).eq("type", "chat").eq("read", false).then(() => {});
 

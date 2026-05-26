@@ -10,6 +10,8 @@ import { Send, Trash2, MessagesSquare } from "lucide-react";
 import { format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useProfiles } from "@/lib/profiles";
 
 export const Route = createFileRoute("/_app/chat")({ component: ChatPage });
 

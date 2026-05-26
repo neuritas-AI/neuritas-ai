@@ -50,7 +50,6 @@ function ChatPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
         const m = payload.new as Msg;
         setMessages(prev => [...prev, m]);
-        loadProfiles([m.user_id]);
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_messages" }, (payload) => {
         setMessages(prev => prev.filter(x => x.id !== (payload.old as any).id));

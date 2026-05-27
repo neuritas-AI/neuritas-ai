@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -9,12 +8,15 @@ import { nl } from "date-fns/locale";
 import { Trash2, StickyNote, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
-import { useProfile } from "@/lib/profiles";
+import { useProfile, useProfiles } from "@/lib/profiles";
+import { MentionInput } from "@/components/MentionInput";
+import { renderMentions } from "@/lib/mention-render";
 
 type Note = { id: string; user_id: string; content: string; created_at: string };
 
 export function ProjectNotes({ projectId }: { projectId: string }) {
   const { user } = useAuth();
+  const { profiles: profileList } = useProfiles();
   const [items, setItems] = useState<Note[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,15 +78,14 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
 
       <div className={`${open ? "block" : "hidden"} lg:block space-y-3`}>
         <div className="space-y-2">
-          <Textarea
+          <MentionInput
             rows={2}
-            placeholder="Voeg een snelle notitie toe voor je team…"
+            placeholder="Notitie voor je team… gebruik @ om iemand te taggen"
             value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => {
-              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") add();
-            }}
-            className="resize-none text-sm"
+            onChange={setText}
+            onSubmit={add}
+            excludeIds={user ? [user.id] : []}
+            className="text-sm"
           />
           <Button
             onClick={add}
@@ -113,7 +114,7 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: nl })}
                   </div>
                   <div className="text-sm whitespace-pre-wrap break-words mt-1 text-foreground/90">
-                    {n.content}
+                    {renderMentions(n.content, profileList, { highlightSelf: user?.id })}
                   </div>
                 </div>
                 {user?.id === n.user_id && (

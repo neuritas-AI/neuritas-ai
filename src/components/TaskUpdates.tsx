@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -9,11 +8,15 @@ import { nl } from "date-fns/locale";
 import { Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { UserAvatar } from "@/components/UserAvatar";
+import { MentionInput } from "@/components/MentionInput";
+import { renderMentions } from "@/lib/mention-render";
+import { useProfiles } from "@/lib/profiles";
 
 type Update = { id: string; user_id: string; content: string; created_at: string };
 
 export function TaskUpdates({ taskId, profiles }: { taskId: string; profiles: any[] }) {
   const { user } = useAuth();
+  const { profiles: profileList } = useProfiles();
   const [items, setItems] = useState<Update[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -46,7 +49,16 @@ export function TaskUpdates({ taskId, profiles }: { taskId: string; profiles: an
     <div className="space-y-2">
       <Label>Updates / voortgang</Label>
       <div className="flex gap-2">
-        <Textarea rows={2} placeholder="Hou je team op de hoogte… wat heb je al gedaan?" value={text} onChange={e => setText(e.target.value)} />
+        <div className="flex-1">
+          <MentionInput
+            rows={2}
+            placeholder="Hou je team op de hoogte… gebruik @ om iemand te taggen"
+            value={text}
+            onChange={setText}
+            onSubmit={add}
+            excludeIds={user ? [user.id] : []}
+          />
+        </div>
         <Button onClick={add} disabled={busy || !text.trim()} className="bg-gradient-brand border-0 self-end">Update posten</Button>
       </div>
       <div className="border rounded-md max-h-52 overflow-y-auto divide-y">
@@ -61,7 +73,7 @@ export function TaskUpdates({ taskId, profiles }: { taskId: string; profiles: an
                   <span className="font-medium text-foreground">{p?.full_name ?? "Iemand"}</span>
                   {" · "}{formatDistanceToNow(new Date(u.created_at), { addSuffix: true, locale: nl })}
                 </div>
-                <div className="whitespace-pre-wrap break-words">{u.content}</div>
+                <div className="whitespace-pre-wrap break-words">{renderMentions(u.content, profileList, { highlightSelf: user?.id })}</div>
               </div>
               {user?.id === u.user_id && (
                 <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => del(u.id)}><Trash2 className="h-3.5 w-3.5" /></Button>

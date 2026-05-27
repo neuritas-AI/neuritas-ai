@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow, format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info, Trash2 } from "lucide-react";
+import { Bell, Check, X, CheckCheck, Calendar, CheckSquare, Users, Info, Trash2, AtSign } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({ component: NotificationsPage });
@@ -31,6 +31,9 @@ const TYPE_META: Record<string, { label: string; icon: any; color: string }> = {
   internal_invite:   { label: "Intern overleg", icon: Users,      color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
   morning_quote:     { label: "Goedemorgen",   icon: Info,        color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
   motivation_quote:  { label: "Motivatie",     icon: Info,        color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
+  chat_mention:        { label: "Vermelding",   icon: AtSign,      color: "bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20" },
+  mention_project_note:{ label: "Vermelding",   icon: AtSign,      color: "bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20" },
+  mention_task_update: { label: "Vermelding",   icon: AtSign,      color: "bg-fuchsia-500/10 text-fuchsia-600 border-fuchsia-500/20" },
   update:            { label: "Update",        icon: Info,        color: "bg-muted text-muted-foreground border-border" },
 };
 const metaFor = (t: string) => TYPE_META[t] ?? { label: t, icon: Info, color: "bg-muted text-muted-foreground border-border" };

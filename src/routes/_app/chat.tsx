@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Trash2, MessagesSquare } from "lucide-react";
@@ -12,6 +11,8 @@ import { nl } from "date-fns/locale";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useProfiles } from "@/lib/profiles";
+import { MentionInput } from "@/components/MentionInput";
+import { renderMentions } from "@/lib/mention-render";
 
 export const Route = createFileRoute("/_app/chat")({ component: ChatPage });
 
@@ -32,7 +33,7 @@ function dayLabel(d: Date) {
 
 function ChatPage() {
   const { user } = useAuth();
-  const { byId: profiles } = useProfiles();
+  const { byId: profiles, profiles: profileList } = useProfiles();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -169,7 +170,7 @@ function ChatPage() {
                                 ? `bg-gradient-brand text-white ${mi === 0 ? "rounded-2xl rounded-tr-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-br-md" : ""}`
                                 : `bg-muted text-foreground ${mi === 0 ? "rounded-2xl rounded-tl-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-bl-md" : ""}`
                             }`}>
-                              {m.content}
+                              {renderMentions(m.content, profileList, { highlightSelf: user?.id })}
                             </div>
                             {mine && (
                               <button
@@ -191,14 +192,18 @@ function ChatPage() {
           </div>
         </ScrollArea>
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t bg-card/80 backdrop-blur p-3 sm:p-4">
-          <div className="flex items-center gap-2 rounded-full border bg-background pl-4 pr-1.5 py-1 shadow-soft focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition">
-            <Input
+          <div className="flex items-end gap-2 rounded-2xl border bg-background pl-3 pr-1.5 py-1.5 shadow-soft focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition">
+            <MentionInput
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Schrijf een bericht…"
+              onChange={setInput}
+              onSubmit={send}
+              submitOnEnter
+              placeholder="Schrijf een bericht… gebruik @ om iemand te taggen"
               maxLength={2000}
               disabled={sending}
-              className="border-0 shadow-none focus-visible:ring-0 px-0 h-10 bg-transparent"
+              rows={1}
+              excludeIds={user ? [user.id] : []}
+              className="border-0 shadow-none focus-visible:ring-0 px-0 py-1.5 min-h-[40px] max-h-32 bg-transparent"
             />
             <Button
               type="submit"

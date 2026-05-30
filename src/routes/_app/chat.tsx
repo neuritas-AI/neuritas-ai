@@ -170,7 +170,7 @@ function ChatPage() {
                                 ? `bg-gradient-brand text-white ${mi === 0 ? "rounded-2xl rounded-tr-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-br-md" : ""}`
                                 : `bg-muted text-foreground ${mi === 0 ? "rounded-2xl rounded-tl-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-bl-md" : ""}`
                             }`}>
-                              {renderMentions(m.content, profileList, { highlightSelf: user?.id })}
+                              {renderMentions(m.content, profileList, { highlightSelf: user?.id, variant: mine ? "onBrand" : "default" })}
                             </div>
                             {mine && (
                               <button

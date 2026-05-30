@@ -8,9 +8,11 @@ import type { Profile } from "@/lib/profiles";
 export function renderMentions(
   text: string,
   profiles: Profile[],
-  opts?: { highlightSelf?: string },
+  opts?: { highlightSelf?: string; variant?: "default" | "onBrand" },
 ): ReactNode {
   if (!text) return null;
+  const variant = opts?.variant ?? "default";
+
 
   // Build mention vocabulary (lowercase → display name)
   const vocab = new Map<string, { display: string; userId: string }>();
@@ -56,18 +58,20 @@ export function renderMentions(
     }
 
     const isSelf = opts?.highlightSelf && hit.userId === opts.highlightSelf;
+    const cls =
+      variant === "onBrand"
+        ? isSelf
+          ? "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-semibold bg-white text-primary shadow-sm"
+          : "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-semibold bg-white/25 text-white ring-1 ring-white/40"
+        : isSelf
+          ? "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-semibold bg-gradient-brand text-white shadow-sm"
+          : "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-medium bg-primary/10 text-primary";
     out.push(
-      <span
-        key={`m-${key++}`}
-        className={
-          isSelf
-            ? "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-semibold bg-gradient-brand text-white shadow-sm"
-            : "inline-flex items-center rounded-md px-1.5 py-0.5 text-[0.85em] font-medium bg-primary/10 text-primary"
-        }
-      >
+      <span key={`m-${key++}`} className={cls}>
         @{hit.display}
       </span>,
     );
+
     lastEnd = tokenEnd;
     re.lastIndex = tokenEnd; // continue after the match
   }

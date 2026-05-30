@@ -124,7 +124,7 @@ export const MentionInput = forwardRef<MentionInputHandle, Props>(function Menti
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <textarea
         ref={taRef}
         value={value}

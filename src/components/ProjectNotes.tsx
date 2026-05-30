@@ -2,25 +2,34 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Trash2, StickyNote, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/role";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useProfile, useProfiles } from "@/lib/profiles";
 import { MentionInput } from "@/components/MentionInput";
 import { renderMentions } from "@/lib/mention-render";
 
+
 type Note = { id: string; user_id: string; content: string; created_at: string };
 
 export function ProjectNotes({ projectId }: { projectId: string }) {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const { profiles: profileList } = useProfiles();
   const [items, setItems] = useState<Note[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
 
   async function load() {
     const { data } = await supabase
@@ -54,8 +63,10 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
 
   async function del(id: string) {
     const { error } = await supabase.from("project_notes").delete().eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) return toast.error("Verwijderen mislukt");
+    toast.success("Notitie verwijderd");
   }
+
 
   return (
     <Card className="p-4 shadow-soft">
@@ -117,12 +128,13 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
                     {renderMentions(n.content, profileList, { highlightSelf: user?.id })}
                   </div>
                 </div>
-                {user?.id === n.user_id && (
+                {(user?.id === n.user_id || isAdmin) && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => del(n.id)}
+                    className="h-6 w-6 shrink-0 opacity-60 sm:opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                    onClick={() => setConfirmId(n.id)}
+                    aria-label="Notitie verwijderen"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
@@ -132,6 +144,30 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
           ))}
         </div>
       </div>
+
+      <AlertDialog open={!!confirmId} onOpenChange={(o) => !o && setConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Notitie verwijderen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ben je zeker dat je deze notitie wil verwijderen? Deze actie kan niet ongedaan worden gemaakt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (confirmId) await del(confirmId);
+                setConfirmId(null);
+              }}
+            >
+              Verwijderen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </Card>
   );
 }

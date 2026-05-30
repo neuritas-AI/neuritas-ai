@@ -193,18 +193,20 @@ function ChatPage() {
         </ScrollArea>
         <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t bg-card/80 backdrop-blur p-3 sm:p-4">
           <div className="flex items-end gap-2 rounded-2xl border bg-background pl-3 pr-1.5 py-1.5 shadow-soft focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition">
-            <MentionInput
-              value={input}
-              onChange={setInput}
-              onSubmit={send}
-              submitOnEnter
-              placeholder="Schrijf een bericht… gebruik @ om iemand te taggen"
-              maxLength={2000}
-              disabled={sending}
-              rows={1}
-              excludeIds={user ? [user.id] : []}
-              className="border-0 shadow-none focus-visible:ring-0 px-0 py-1.5 min-h-[40px] max-h-32 bg-transparent"
-            />
+            <div className="flex-1 min-w-0">
+              <MentionInput
+                value={input}
+                onChange={setInput}
+                onSubmit={send}
+                submitOnEnter
+                placeholder="Schrijf een bericht… gebruik @ om iemand te taggen"
+                maxLength={2000}
+                disabled={sending}
+                rows={1}
+                excludeIds={user ? [user.id] : []}
+                className="border-0 shadow-none focus-visible:ring-0 px-2 py-2 min-h-[44px] max-h-32 bg-transparent w-full"
+              />
+            </div>
             <Button
               type="submit"
               disabled={sending || !input.trim()}
@@ -215,6 +217,7 @@ function ChatPage() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
+
         </form>
       </Card>
     </div>

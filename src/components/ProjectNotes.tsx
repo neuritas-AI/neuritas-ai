@@ -2,15 +2,21 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Trash2, StickyNote, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useRole } from "@/lib/role";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useProfile, useProfiles } from "@/lib/profiles";
 import { MentionInput } from "@/components/MentionInput";
 import { renderMentions } from "@/lib/mention-render";
+
 
 type Note = { id: string; user_id: string; content: string; created_at: string };
 

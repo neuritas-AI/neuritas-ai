@@ -63,8 +63,10 @@ export function ProjectNotes({ projectId }: { projectId: string }) {
 
   async function del(id: string) {
     const { error } = await supabase.from("project_notes").delete().eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) return toast.error("Verwijderen mislukt");
+    toast.success("Notitie verwijderd");
   }
+
 
   return (
     <Card className="p-4 shadow-soft">

@@ -22,11 +22,14 @@ type Note = { id: string; user_id: string; content: string; created_at: string }
 
 export function ProjectNotes({ projectId }: { projectId: string }) {
   const { user } = useAuth();
+  const { isAdmin } = useRole();
   const { profiles: profileList } = useProfiles();
   const [items, setItems] = useState<Note[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(true);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
 
   async function load() {
     const { data } = await supabase

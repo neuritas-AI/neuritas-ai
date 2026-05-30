@@ -8,9 +8,11 @@ import type { Profile } from "@/lib/profiles";
 export function renderMentions(
   text: string,
   profiles: Profile[],
-  opts?: { highlightSelf?: string },
+  opts?: { highlightSelf?: string; variant?: "default" | "onBrand" },
 ): ReactNode {
   if (!text) return null;
+  const variant = opts?.variant ?? "default";
+
 
   // Build mention vocabulary (lowercase → display name)
   const vocab = new Map<string, { display: string; userId: string }>();

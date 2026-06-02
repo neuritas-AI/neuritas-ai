@@ -8,9 +8,11 @@ import { toast } from "sonner";
 export function FilePreviewDialog({
   file,
   onClose,
+  lastPage,
 }: {
   file: { id: string; name: string; storage_path: string; mime_type?: string | null } | null;
   onClose: () => void;
+  lastPage?: number | null;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);

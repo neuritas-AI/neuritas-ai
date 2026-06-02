@@ -15,6 +15,7 @@ import {
 import {
   Plus, BookOpen, ExternalLink, FileText, Trash2, ArrowLeft,
   Sparkles, Megaphone, GraduationCap, Pencil, Search, Layers,
+  Circle, CircleDot, CheckCircle2, Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -22,8 +23,38 @@ import { useRole } from "@/lib/role";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_app/academy")({ component: AcademyPage });
+
+type ProgressStatus = "not_started" | "in_progress" | "read";
+type Progress = { item_id: string; user_id: string; status: ProgressStatus; current_page: number | null };
+
+const STATUS_META: Record<ProgressStatus, { label: string; icon: any; dot: string; chip: string; ring: string }> = {
+  not_started: {
+    label: "Niet gestart",
+    icon: Circle,
+    dot: "bg-muted-foreground/40",
+    chip: "bg-muted text-muted-foreground border-border",
+    ring: "ring-border",
+  },
+  in_progress: {
+    label: "Bezig",
+    icon: CircleDot,
+    dot: "bg-blue-500",
+    chip: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/30",
+    ring: "ring-blue-500/40",
+  },
+  read: {
+    label: "Gelezen",
+    icon: CheckCircle2,
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
+    ring: "ring-emerald-500/40",
+  },
+};
+
 
 type Category = {
   id: string; name: string; slug: string; icon: string | null;

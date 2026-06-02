@@ -297,18 +297,21 @@ export type Database = {
       }
       chat_messages: {
         Row: {
+          channel: string
           content: string
           created_at: string
           id: string
           user_id: string
         }
         Insert: {
+          channel?: string
           content: string
           created_at?: string
           id?: string
           user_id: string
         }
         Update: {
+          channel?: string
           content?: string
           created_at?: string
           id?: string

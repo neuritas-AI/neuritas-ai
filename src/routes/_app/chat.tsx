@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Trash2, MessagesSquare } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Send, Trash2, MessagesSquare, Hash, Lightbulb, FolderKanban, Menu } from "lucide-react";
 import { format, isToday, isYesterday, differenceInMinutes } from "date-fns";
 import { nl } from "date-fns/locale";
 import { toast } from "sonner";
@@ -13,10 +15,30 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { useProfiles } from "@/lib/profiles";
 import { MentionInput } from "@/components/MentionInput";
 import { renderMentions } from "@/lib/mention-render";
+import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/chat")({ component: ChatPage });
+export const Route = createFileRoute("/_app/chat")({
+  validateSearch: z.object({ channel: z.string().optional() }),
+  component: ChatPage,
+});
 
-type Msg = { id: string; user_id: string; content: string; created_at: string };
+type Msg = { id: string; user_id: string; content: string; created_at: string; channel: string };
+
+type Channel = {
+  id: string;
+  name: string;
+  description: string;
+  icon: typeof Hash;
+  accent: string; // tailwind text color class
+};
+
+const CHANNELS: Channel[] = [
+  { id: "algemeen", name: "Algemeen", description: "Dagelijkse updates & snelle berichten", icon: Hash, accent: "text-blue-500" },
+  { id: "ideeen", name: "Ideeën", description: "Brainstorm, voorstellen, AI & marketing", icon: Lightbulb, accent: "text-amber-500" },
+  { id: "projecten", name: "Projecten", description: "Project-overstijgende discussies", icon: FolderKanban, accent: "text-emerald-500" },
+];
+
+const DEFAULT_CHANNEL = "algemeen";
 
 function ts(d: string) {
   const date = new Date(d);
@@ -34,21 +56,38 @@ function dayLabel(d: Date) {
 function ChatPage() {
   const { user } = useAuth();
   const { byId: profiles, profiles: profileList } = useProfiles();
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const activeChannel = useMemo(() => {
+    const wanted = search.channel ?? DEFAULT_CHANNEL;
+    return CHANNELS.find(c => c.id === wanted)?.id ?? DEFAULT_CHANNEL;
+  }, [search.channel]);
+  const channelMeta = CHANNELS.find(c => c.id === activeChannel)!;
+
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Load + subscribe
   useEffect(() => {
     if (!user) return;
-    supabase.from("chat_messages").select("*").order("created_at", { ascending: true }).limit(200).then(({ data }) => {
-      const list = (data ?? []) as Msg[];
-      setMessages(list);
-    });
+    let cancelled = false;
+    supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("channel", activeChannel)
+      .order("created_at", { ascending: true })
+      .limit(200)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setMessages((data ?? []) as Msg[]);
+      });
     supabase.from("notifications").update({ read: true }).eq("type", "chat").eq("read", false).then(() => {});
 
-    const ch = supabase.channel("chat-messages")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages" }, (payload) => {
+    const ch = supabase.channel(`chat-messages-${activeChannel}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `channel=eq.${activeChannel}` }, (payload) => {
         const m = payload.new as Msg;
         setMessages(prev => [...prev, m]);
       })
@@ -56,9 +95,9 @@ function ChatPage() {
         setMessages(prev => prev.filter(x => x.id !== (payload.old as any).id));
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => { cancelled = true; supabase.removeChannel(ch); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, activeChannel]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -70,7 +109,7 @@ function ChatPage() {
     if (content.length > 2000) return toast.error("Bericht te lang (max 2000 tekens)");
     setSending(true);
     setInput("");
-    const { error } = await supabase.from("chat_messages").insert({ user_id: user.id, content });
+    const { error } = await supabase.from("chat_messages").insert({ user_id: user.id, content, channel: activeChannel });
     setSending(false);
     if (error) { toast.error(error.message); setInput(content); }
   }
@@ -80,13 +119,14 @@ function ChatPage() {
     await supabase.from("chat_messages").delete().eq("id", id);
   }
 
-  function initials(uid: string) {
-    const n = profiles[uid]?.full_name ?? "??";
-    return n.split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase();
-  }
   function nameOf(uid: string) {
     if (uid === user?.id) return "Jij";
     return profiles[uid]?.full_name ?? "Onbekend";
+  }
+
+  function switchChannel(id: string) {
+    setMobileNavOpen(false);
+    navigate({ search: { channel: id }, replace: true });
   }
 
   // Group consecutive messages by author within 5 min, split by day
@@ -116,8 +156,33 @@ function ChatPage() {
     lastTime = d;
   }
 
+  const ChannelList = ({ onPick }: { onPick?: (id: string) => void }) => (
+    <div className="space-y-1">
+      <div className="px-2 pb-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Channels</div>
+      {CHANNELS.map((c) => {
+        const Icon = c.icon;
+        const active = c.id === activeChannel;
+        return (
+          <button
+            key={c.id}
+            onClick={() => (onPick ? onPick(c.id) : switchChannel(c.id))}
+            className={cn(
+              "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left text-sm transition",
+              active ? "bg-gradient-brand-soft text-foreground font-medium shadow-soft" : "hover:bg-muted/60 text-muted-foreground"
+            )}
+          >
+            <span className={cn("h-8 w-8 grid place-items-center rounded-lg shrink-0", active ? "bg-background shadow-soft" : "bg-muted/60")}>
+              <Icon className={cn("h-4 w-4", c.accent)} />
+            </span>
+            <span className="min-w-0 flex-1 truncate">{c.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="space-y-5 max-w-4xl mx-auto">
+    <div className="space-y-5 max-w-6xl mx-auto">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-3xl border bg-card shadow-soft">
         <div className="absolute inset-0 bg-gradient-brand-soft opacity-50" />
@@ -128,98 +193,133 @@ function ChatPage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-display font-semibold tracking-tight">Team Chat</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Centrale chat voor het hele team</p>
+            <p className="text-muted-foreground text-sm mt-0.5">Gestructureerde communicatie per channel</p>
           </div>
         </div>
       </div>
 
-      <Card className="flex flex-col h-[calc(100vh-260px)] min-h-[420px] rounded-2xl shadow-soft overflow-hidden border">
-        <ScrollArea className="flex-1" ref={scrollRef as any}>
-          <div className="px-3 sm:px-5 py-5 space-y-6">
-            {messages.length === 0 && (
-              <div className="text-center py-16">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-brand-soft grid place-items-center mx-auto mb-3">
-                  <MessagesSquare className="h-7 w-7 text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-5">
+        {/* Sidebar (desktop) */}
+        <aside className="hidden md:block">
+          <Card className="p-2 rounded-2xl shadow-soft sticky top-4">
+            <ChannelList />
+          </Card>
+        </aside>
+
+        {/* Chat area */}
+        <Card className="flex flex-col h-[calc(100vh-260px)] min-h-[420px] rounded-2xl shadow-soft overflow-hidden border">
+          {/* Channel header */}
+          <div className="flex items-center gap-3 px-4 sm:px-5 py-3 border-b bg-card/60 backdrop-blur">
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 -ml-1" aria-label="Open channels">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-4">
+                <SheetHeader>
+                  <SheetTitle>Channels</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4">
+                  <ChannelList />
                 </div>
-                <p className="text-sm font-medium">Nog geen berichten</p>
-                <p className="text-xs text-muted-foreground mt-1">Stuur de eerste om het gesprek te starten.</p>
-              </div>
-            )}
-            {groups.map((g, gi) => (
-              <div key={gi} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2.5 py-1 rounded-full bg-muted/60">{g.day}</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-                {g.items.map((item, ii) => {
-                  const mine = item.author === user?.id;
-                  const all = [item.first, ...item.rest];
-                  return (
-                    <div key={ii} className={`flex gap-2.5 sm:gap-3 ${mine ? "flex-row-reverse" : ""}`}>
-                      <UserAvatar userId={item.author} size={36} className="shadow-soft" />
-                      <div className={`min-w-0 flex flex-col gap-1 max-w-[78%] sm:max-w-[70%] ${mine ? "items-end" : "items-start"}`}>
-                        <div className={`flex items-baseline gap-2 px-1 ${mine ? "flex-row-reverse" : ""}`}>
-                          <span className="text-xs font-semibold">{nameOf(item.author)}</span>
-                          <span className="text-[10px] text-muted-foreground">{ts(item.first.created_at)}</span>
-                        </div>
-                        {all.map((m, mi) => (
-                          <div key={m.id} className={`group relative inline-flex items-end gap-1 ${mine ? "flex-row-reverse" : ""}`}>
-                            <div className={`px-3.5 py-2 text-sm whitespace-pre-wrap break-words shadow-soft ${
-                              mine
-                                ? `bg-gradient-brand text-white ${mi === 0 ? "rounded-2xl rounded-tr-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-br-md" : ""}`
-                                : `bg-muted text-foreground ${mi === 0 ? "rounded-2xl rounded-tl-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-bl-md" : ""}`
-                            }`}>
-                              {renderMentions(m.content, profileList, { highlightSelf: user?.id, variant: mine ? "onBrand" : "default" })}
-                            </div>
-                            {mine && (
-                              <button
-                                onClick={() => del(m.id)}
-                                className="opacity-0 group-hover:opacity-100 transition h-7 w-7 grid place-items-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                aria-label="Verwijder"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-        <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t bg-card/80 backdrop-blur p-3 sm:p-4">
-          <div className="flex items-end gap-2 rounded-2xl border bg-background pl-3 pr-1.5 py-1.5 shadow-soft focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition">
-            <div className="flex-1 min-w-0">
-              <MentionInput
-                value={input}
-                onChange={setInput}
-                onSubmit={send}
-                submitOnEnter
-                placeholder="Schrijf een bericht… gebruik @ om iemand te taggen"
-                maxLength={2000}
-                disabled={sending}
-                rows={1}
-                excludeIds={user ? [user.id] : []}
-                className="border-0 shadow-none focus-visible:ring-0 px-2 py-2 min-h-[44px] max-h-32 bg-transparent w-full"
-              />
+              </SheetContent>
+            </Sheet>
+            <span className={cn("h-9 w-9 grid place-items-center rounded-xl bg-muted/60 shrink-0")}>
+              <channelMeta.icon className={cn("h-4 w-4", channelMeta.accent)} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-sm truncate">#{channelMeta.name}</div>
+              <div className="text-xs text-muted-foreground truncate">{channelMeta.description}</div>
             </div>
-            <Button
-              type="submit"
-              disabled={sending || !input.trim()}
-              size="icon"
-              className="bg-gradient-brand border-0 rounded-full h-10 w-10 shrink-0 shadow-brand disabled:opacity-50 disabled:shadow-none"
-              aria-label="Verstuur"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
           </div>
 
-        </form>
-      </Card>
+          <ScrollArea className="flex-1" ref={scrollRef as any}>
+            <div className="px-3 sm:px-5 py-5 space-y-6">
+              {messages.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="h-14 w-14 rounded-2xl bg-gradient-brand-soft grid place-items-center mx-auto mb-3">
+                    <channelMeta.icon className={cn("h-7 w-7", channelMeta.accent)} />
+                  </div>
+                  <p className="text-sm font-medium">Nog geen berichten in #{channelMeta.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Stuur de eerste om het gesprek te starten.</p>
+                </div>
+              )}
+              {groups.map((g, gi) => (
+                <div key={gi} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-2.5 py-1 rounded-full bg-muted/60">{g.day}</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+                  {g.items.map((item, ii) => {
+                    const mine = item.author === user?.id;
+                    const all = [item.first, ...item.rest];
+                    return (
+                      <div key={ii} className={`flex gap-2.5 sm:gap-3 ${mine ? "flex-row-reverse" : ""}`}>
+                        <UserAvatar userId={item.author} size={36} className="shadow-soft" />
+                        <div className={`min-w-0 flex flex-col gap-1 max-w-[78%] sm:max-w-[70%] ${mine ? "items-end" : "items-start"}`}>
+                          <div className={`flex items-baseline gap-2 px-1 ${mine ? "flex-row-reverse" : ""}`}>
+                            <span className="text-xs font-semibold">{nameOf(item.author)}</span>
+                            <span className="text-[10px] text-muted-foreground">{ts(item.first.created_at)}</span>
+                          </div>
+                          {all.map((m, mi) => (
+                            <div key={m.id} className={`group relative inline-flex items-end gap-1 ${mine ? "flex-row-reverse" : ""}`}>
+                              <div className={`px-3.5 py-2 text-sm whitespace-pre-wrap break-words shadow-soft ${
+                                mine
+                                  ? `bg-gradient-brand text-white ${mi === 0 ? "rounded-2xl rounded-tr-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-br-md" : ""}`
+                                  : `bg-muted text-foreground ${mi === 0 ? "rounded-2xl rounded-tl-md" : "rounded-2xl"} ${mi === all.length - 1 && all.length > 1 ? "rounded-bl-md" : ""}`
+                              }`}>
+                                {renderMentions(m.content, profileList, { highlightSelf: user?.id, variant: mine ? "onBrand" : "default" })}
+                              </div>
+                              {mine && (
+                                <button
+                                  onClick={() => del(m.id)}
+                                  className="opacity-0 group-hover:opacity-100 transition h-7 w-7 grid place-items-center rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  aria-label="Verwijder"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t bg-card/80 backdrop-blur p-3 sm:p-4">
+            <div className="flex items-end gap-2 rounded-2xl border bg-background pl-3 pr-1.5 py-1.5 shadow-soft focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/15 transition">
+              <div className="flex-1 min-w-0">
+                <MentionInput
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={send}
+                  submitOnEnter
+                  placeholder={`Bericht in #${channelMeta.name}… gebruik @ om iemand te taggen`}
+                  maxLength={2000}
+                  disabled={sending}
+                  rows={1}
+                  excludeIds={user ? [user.id] : []}
+                  className="border-0 shadow-none focus-visible:ring-0 px-2 py-2 min-h-[44px] max-h-32 bg-transparent w-full"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={sending || !input.trim()}
+                size="icon"
+                className="bg-gradient-brand border-0 rounded-full h-10 w-10 shrink-0 shadow-brand disabled:opacity-50 disabled:shadow-none"
+                aria-label="Verstuur"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -666,3 +666,159 @@ function CategoryDialog({
     </Dialog>
   );
 }
+
+// ============== Status filter pills ==============
+function StatusFilterPills({
+  value,
+  onChange,
+}: {
+  value: "all" | ProgressStatus;
+  onChange: (v: "all" | ProgressStatus) => void;
+}) {
+  const opts: Array<{ k: "all" | ProgressStatus; label: string }> = [
+    { k: "all", label: "Alles" },
+    { k: "not_started", label: "Niet gestart" },
+    { k: "in_progress", label: "Bezig" },
+    { k: "read", label: "Gelezen" },
+  ];
+  return (
+    <div className="flex flex-wrap gap-1.5 p-1 rounded-lg bg-muted/60 border">
+      {opts.map(o => {
+        const active = value === o.k;
+        return (
+          <button
+            key={o.k}
+            type="button"
+            onClick={() => onChange(o.k)}
+            className={`text-xs px-3 min-h-[32px] rounded-md transition-all font-medium ${
+              active ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============== Personal stats bar ==============
+function ProgressStatsBar({ stats }: { stats: { read: number; busy: number; not_started: number; total: number } }) {
+  if (stats.total === 0) return null;
+  const items = [
+    { label: "Gelezen", value: stats.read, dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-300" },
+    { label: "Bezig", value: stats.busy, dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-300" },
+    { label: "Niet gestart", value: stats.not_started, dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {items.map(i => (
+        <div key={i.label} className="rounded-xl border bg-card p-4 shadow-soft flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 rounded-full ${i.dot}`} />
+          <div className="min-w-0">
+            <div className={`text-2xl font-display font-semibold leading-none ${i.text}`}>{i.value}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">{i.label}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============== Team progress popover (admin) ==============
+function TeamProgressBadge({
+  itemId,
+  allProgress,
+  profiles,
+}: {
+  itemId: string;
+  allProgress: Progress[];
+  profiles: any[];
+}) {
+  const rows = allProgress.filter(p => p.item_id === itemId);
+  const read = rows.filter(r => r.status === "read");
+  const busy = rows.filter(r => r.status === "in_progress");
+  const startedIds = new Set(rows.map(r => r.user_id));
+  const notStarted = profiles.filter(p => !startedIds.has(p.id));
+  const name = (id: string) => profiles.find(p => p.id === id)?.full_name ?? "Iemand";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded-md border bg-background hover:bg-accent text-muted-foreground">
+          <Users className="h-3 w-3" /> Team
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3 text-xs space-y-3">
+        <div>
+          <div className="font-semibold text-emerald-600 dark:text-emerald-300 mb-1">Gelezen ({read.length})</div>
+          {read.length === 0 ? <p className="text-muted-foreground">Nog niemand</p> :
+            <ul className="space-y-0.5">{read.map(r => <li key={r.user_id}>{name(r.user_id)}</li>)}</ul>}
+        </div>
+        <div>
+          <div className="font-semibold text-blue-600 dark:text-blue-300 mb-1">Bezig ({busy.length})</div>
+          {busy.length === 0 ? <p className="text-muted-foreground">Niemand</p> :
+            <ul className="space-y-0.5">{busy.map(r => <li key={r.user_id}>{name(r.user_id)}{r.current_page ? ` · p. ${r.current_page}` : ""}</li>)}</ul>}
+        </div>
+        <div>
+          <div className="font-semibold text-muted-foreground mb-1">Niet gestart ({notStarted.length})</div>
+          {notStarted.length === 0 ? <p className="text-muted-foreground">Iedereen is gestart</p> :
+            <ul className="space-y-0.5">{notStarted.map(p => <li key={p.id}>{p.full_name ?? "Iemand"}</li>)}</ul>}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ============== Page prompt dialog ==============
+function PagePromptDialog({
+  item,
+  initial,
+  onClose,
+  onSave,
+}: {
+  item: any;
+  initial: number | null;
+  onClose: () => void;
+  onSave: (page: number | null) => void;
+}) {
+  const [page, setPage] = useState<string>(initial ? String(initial) : "");
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Markeren als bezig</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Op welke pagina ben je gebleven bij <span className="font-medium text-foreground">{item.title}</span>?
+          </p>
+          <div>
+            <Label>Paginanummer (optioneel)</Label>
+            <Input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={page}
+              onChange={(e) => setPage(e.target.value)}
+              placeholder="Bijv. 12"
+              autoFocus
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Annuleren</Button>
+          <Button
+            className="bg-gradient-brand border-0"
+            onClick={() => {
+              const n = page.trim() ? Math.max(1, parseInt(page, 10)) : null;
+              onSave(Number.isFinite(n as number) ? n : null);
+            }}
+          >
+            Opslaan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

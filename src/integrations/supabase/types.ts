@@ -527,6 +527,7 @@ export type Database = {
           notes: string | null
           number: string
           project_id: string
+          send_reminder_sent: boolean
           status: Database["public"]["Enums"]["invoice_status"]
           updated_at: string
         }
@@ -541,6 +542,7 @@ export type Database = {
           notes?: string | null
           number?: string
           project_id: string
+          send_reminder_sent?: boolean
           status?: Database["public"]["Enums"]["invoice_status"]
           updated_at?: string
         }
@@ -555,6 +557,7 @@ export type Database = {
           notes?: string | null
           number?: string
           project_id?: string
+          send_reminder_sent?: boolean
           status?: Database["public"]["Enums"]["invoice_status"]
           updated_at?: string
         }
@@ -1063,6 +1066,7 @@ export type Database = {
     Functions: {
       cleanup_old_notifications: { Args: never; Returns: undefined }
       dispatch_follow_ups: { Args: never; Returns: undefined }
+      dispatch_invoice_send_reminders: { Args: never; Returns: undefined }
       dispatch_motivation_pushes: { Args: never; Returns: undefined }
       dispatch_reminders: { Args: never; Returns: undefined }
       generate_daily_motivation_schedule: { Args: never; Returns: undefined }

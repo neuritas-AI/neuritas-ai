@@ -161,8 +161,8 @@ function ProjectDetail() {
                         <span className="truncate max-w-[200px]">{customer.company || customer.name}</span>
                       </Link>
                     )}
-                    <ProjectStatusSelect project={project} onChanged={load} />
-                    {project.status_reason && PROJECT_STATUS_REQUIRES_REASON.has(project.status) && (
+                    {!internal && <ProjectStatusSelect project={project} onChanged={load} />}
+                    {!internal && project.status_reason && PROJECT_STATUS_REQUIRES_REASON.has(project.status) && (
                       <span className="text-xs text-muted-foreground italic">"{project.status_reason}"</span>
                     )}
                     {assignedNames && (

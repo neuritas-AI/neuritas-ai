@@ -8,9 +8,11 @@ import { toast } from "sonner";
 export function FilePreviewDialog({
   file,
   onClose,
+  lastPage,
 }: {
   file: { id: string; name: string; storage_path: string; mime_type?: string | null } | null;
   onClose: () => void;
+  lastPage?: number | null;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
@@ -76,7 +78,14 @@ export function FilePreviewDialog({
             </Button>
           )}
         </DialogHeader>
+        {isPdf && lastPage ? (
+          <div className="px-4 py-2 border-b bg-primary/5 text-xs text-primary flex items-center gap-2">
+            <span className="font-medium">📖 Laatst gelezen pagina: {lastPage}</span>
+            <span className="text-muted-foreground">— navigeer in de PDF-viewer naar deze pagina om verder te lezen.</span>
+          </div>
+        ) : null}
         <div className="flex-1 min-h-0 bg-muted/30">
+
           {!url ? (
             <div className="h-full grid place-items-center text-sm text-muted-foreground">Laden…</div>
           ) : isImage ? (

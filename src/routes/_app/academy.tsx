@@ -15,6 +15,7 @@ import {
 import {
   Plus, BookOpen, ExternalLink, FileText, Trash2, ArrowLeft,
   Sparkles, Megaphone, GraduationCap, Pencil, Search, Layers,
+  Circle, CircleDot, CheckCircle2, Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -22,8 +23,38 @@ import { useRole } from "@/lib/role";
 import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { formatDistanceToNow } from "date-fns";
 import { nl } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const Route = createFileRoute("/_app/academy")({ component: AcademyPage });
+
+type ProgressStatus = "not_started" | "in_progress" | "read";
+type Progress = { item_id: string; user_id: string; status: ProgressStatus; current_page: number | null };
+
+const STATUS_META: Record<ProgressStatus, { label: string; icon: any; dot: string; chip: string; ring: string }> = {
+  not_started: {
+    label: "Niet gestart",
+    icon: Circle,
+    dot: "bg-muted-foreground/40",
+    chip: "bg-muted text-muted-foreground border-border",
+    ring: "ring-border",
+  },
+  in_progress: {
+    label: "Bezig",
+    icon: CircleDot,
+    dot: "bg-blue-500",
+    chip: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/30",
+    ring: "ring-blue-500/40",
+  },
+  read: {
+    label: "Gelezen",
+    icon: CheckCircle2,
+    dot: "bg-emerald-500",
+    chip: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
+    ring: "ring-emerald-500/40",
+  },
+};
+
 
 type Category = {
   id: string; name: string; slug: string; icon: string | null;
@@ -44,30 +75,75 @@ function AcademyPage() {
   const [cats, setCats] = useState<Category[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [progress, setProgress] = useState<Progress[]>([]);
+  const [allProgress, setAllProgress] = useState<Progress[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [itemDialog, setItemDialog] = useState(false);
   const [catDialog, setCatDialog] = useState<Category | "new" | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ProgressStatus>("all");
+  const [pagePromptItem, setPagePromptItem] = useState<any | null>(null);
 
   async function load() {
-    const [{ data: c }, { data: i }, { data: pr }] = await Promise.all([
+    const [{ data: c }, { data: i }, { data: pr }, { data: pg }] = await Promise.all([
       supabase.from("academy_categories" as any).select("*").order("sort_order").order("name"),
       supabase.from("ai_academy_items" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
+      supabase.from("academy_progress" as any).select("item_id, user_id, status, current_page"),
     ]);
     setCats((c as any[]) ?? []);
     setItems((i as any[]) ?? []);
     setProfiles(pr ?? []);
+    const allPg = ((pg as any[]) ?? []) as Progress[];
+    setAllProgress(allPg);
+    setProgress(user ? allPg.filter(p => p.user_id === user.id) : []);
   }
   useEffect(() => {
     load();
     const ch = supabase.channel("aa-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "ai_academy_items" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "academy_categories" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "academy_progress" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const progressByItem = useMemo(() => {
+    const m: Record<string, Progress> = {};
+    for (const p of progress) m[p.item_id] = p;
+    return m;
+  }, [progress]);
+
+  function getStatus(itemId: string): ProgressStatus {
+    return progressByItem[itemId]?.status ?? "not_started";
+  }
+
+  async function setItemStatus(item: any, status: ProgressStatus, currentPage?: number | null) {
+    if (!user) return;
+    const existing = progressByItem[item.id];
+    const payload: any = {
+      user_id: user.id,
+      item_id: item.id,
+      status,
+      current_page: status === "in_progress" ? (currentPage ?? existing?.current_page ?? null) : null,
+    };
+    // Optimistic update
+    setProgress(prev => {
+      const others = prev.filter(p => p.item_id !== item.id);
+      return [...others, { ...payload }];
+    });
+    const { error } = await supabase
+      .from("academy_progress" as any)
+      .upsert(payload, { onConflict: "user_id,item_id" });
+    if (error) {
+      toast.error(error.message);
+      load();
+    } else {
+      toast.success(STATUS_META[status].label);
+    }
+  }
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -77,6 +153,17 @@ function AcademyPage() {
     }
     return m;
   }, [items]);
+
+  const stats = useMemo(() => {
+    let read = 0, busy = 0;
+    for (const it of items) {
+      const s = progressByItem[it.id]?.status ?? "not_started";
+      if (s === "read") read++;
+      else if (s === "in_progress") busy++;
+    }
+    return { read, busy, not_started: items.length - read - busy, total: items.length };
+  }, [items, progressByItem]);
+
 
   const active = cats.find(c => c.id === activeCat) ?? null;
   const filtered = useMemo(() => {
@@ -89,8 +176,12 @@ function AcademyPage() {
         (i.importance ?? "").toLowerCase().includes(q),
       );
     }
+    if (statusFilter !== "all") {
+      list = list.filter(i => (progressByItem[i.id]?.status ?? "not_started") === statusFilter);
+    }
     return list;
-  }, [items, active, query]);
+  }, [items, active, query, statusFilter, progressByItem]);
+
 
   async function delItem(item: any) {
     if (!confirm("Verwijderen?")) return;
@@ -158,27 +249,36 @@ function AcademyPage() {
           </div>
         </div>
 
-        <div className="relative max-w-md">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Zoeken in deze categorie…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="relative max-w-md flex-1">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Zoeken in deze categorie…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <StatusFilterPills value={statusFilter} onChange={setStatusFilter} />
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 && (
             <Card className="p-10 text-center text-muted-foreground col-span-full">
-              Nog geen items in deze categorie.
+              {items.filter(i => i.category_id === active.id).length === 0
+                ? "Nog geen items in deze categorie."
+                : "Geen items voor dit filter."}
             </Card>
           )}
           {filtered.map(i => {
             const author = profiles.find(p => p.id === i.created_by);
             const canDel = isAdmin || i.created_by === user?.id;
+            const status = getStatus(i.id);
+            const meta = STATUS_META[status];
+            const StatusIcon = meta.icon;
+            const userProg = progressByItem[i.id];
             return (
-              <Card key={i.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all flex flex-col">
+              <Card key={i.id} className={`p-5 hover:border-primary/40 hover:shadow-soft transition-all flex flex-col ring-1 ring-inset ${meta.ring}`}>
                 <div className="flex items-start gap-3">
                   <div
                     className="h-10 w-10 rounded-lg grid place-items-center shrink-0"
@@ -198,6 +298,19 @@ function AcademyPage() {
                     </Button>
                   )}
                 </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <Badge variant="outline" className={`gap-1 ${meta.chip}`}>
+                    <StatusIcon className="h-3 w-3" /> {meta.label}
+                    {status === "in_progress" && userProg?.current_page ? (
+                      <span className="ml-1 opacity-80">· p. {userProg.current_page}</span>
+                    ) : null}
+                  </Badge>
+                  {isAdmin && (
+                    <TeamProgressBadge itemId={i.id} allProgress={allProgress} profiles={profiles} />
+                  )}
+                </div>
+
                 {i.description && <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{i.description}</p>}
                 {i.importance && (
                   <div
@@ -210,9 +323,10 @@ function AcademyPage() {
                     <p className="text-xs whitespace-pre-line">{i.importance}</p>
                   </div>
                 )}
+
                 <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
                   {i.storage_path && (
-                    <Button size="sm" variant="outline" onClick={() => setPreview({ id: i.id, name: i.file_name, storage_path: i.storage_path, mime_type: i.file_mime })}>
+                    <Button size="sm" variant="outline" onClick={() => setPreview({ ...i, _last_page: userProg?.current_page ?? null })}>
                       <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk bestand
                     </Button>
                   )}
@@ -224,18 +338,58 @@ function AcademyPage() {
                     </Button>
                   )}
                 </div>
+
+                <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-1.5">
+                  {(Object.keys(STATUS_META) as ProgressStatus[]).map(s => {
+                    const m = STATUS_META[s];
+                    const Icon = m.icon;
+                    const isActive = status === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          if (s === "in_progress") setPagePromptItem(i);
+                          else setItemStatus(i, s);
+                        }}
+                        className={`min-h-[36px] flex items-center justify-center gap-1.5 text-[11px] font-medium rounded-md border px-2 py-1.5 transition-all ${
+                          isActive ? `${m.chip} border-current` : "bg-transparent text-muted-foreground border-border hover:bg-accent"
+                        }`}
+                      >
+                        <Icon className="h-3 w-3" />
+                        <span className="hidden sm:inline">{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Card>
             );
           })}
         </div>
 
-        <FilePreviewDialog file={preview} onClose={() => setPreview(null)} />
+        <FilePreviewDialog
+          file={preview ? { id: preview.id, name: preview.file_name, storage_path: preview.storage_path, mime_type: preview.file_mime } : null}
+          lastPage={preview?._last_page ?? null}
+          onClose={() => setPreview(null)}
+        />
         {catDialog && catDialog !== "new" && (
           <CategoryDialog category={catDialog} userId={user?.id ?? null} onClose={() => setCatDialog(null)} />
+        )}
+        {pagePromptItem && (
+          <PagePromptDialog
+            item={pagePromptItem}
+            initial={progressByItem[pagePromptItem.id]?.current_page ?? null}
+            onClose={() => setPagePromptItem(null)}
+            onSave={(page) => {
+              setItemStatus(pagePromptItem, "in_progress", page);
+              setPagePromptItem(null);
+            }}
+          />
         )}
       </div>
     );
   }
+
 
   // ===== Overzicht categorieën =====
   return (
@@ -260,6 +414,10 @@ function AcademyPage() {
           )}
         </div>
       </div>
+
+      <ProgressStatsBar stats={stats} />
+
+
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cats.length === 0 && (
@@ -508,3 +666,159 @@ function CategoryDialog({
     </Dialog>
   );
 }
+
+// ============== Status filter pills ==============
+function StatusFilterPills({
+  value,
+  onChange,
+}: {
+  value: "all" | ProgressStatus;
+  onChange: (v: "all" | ProgressStatus) => void;
+}) {
+  const opts: Array<{ k: "all" | ProgressStatus; label: string }> = [
+    { k: "all", label: "Alles" },
+    { k: "not_started", label: "Niet gestart" },
+    { k: "in_progress", label: "Bezig" },
+    { k: "read", label: "Gelezen" },
+  ];
+  return (
+    <div className="flex flex-wrap gap-1.5 p-1 rounded-lg bg-muted/60 border">
+      {opts.map(o => {
+        const active = value === o.k;
+        return (
+          <button
+            key={o.k}
+            type="button"
+            onClick={() => onChange(o.k)}
+            className={`text-xs px-3 min-h-[32px] rounded-md transition-all font-medium ${
+              active ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============== Personal stats bar ==============
+function ProgressStatsBar({ stats }: { stats: { read: number; busy: number; not_started: number; total: number } }) {
+  if (stats.total === 0) return null;
+  const items = [
+    { label: "Gelezen", value: stats.read, dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-300" },
+    { label: "Bezig", value: stats.busy, dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-300" },
+    { label: "Niet gestart", value: stats.not_started, dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {items.map(i => (
+        <div key={i.label} className="rounded-xl border bg-card p-4 shadow-soft flex items-center gap-3">
+          <span className={`h-2.5 w-2.5 rounded-full ${i.dot}`} />
+          <div className="min-w-0">
+            <div className={`text-2xl font-display font-semibold leading-none ${i.text}`}>{i.value}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">{i.label}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============== Team progress popover (admin) ==============
+function TeamProgressBadge({
+  itemId,
+  allProgress,
+  profiles,
+}: {
+  itemId: string;
+  allProgress: Progress[];
+  profiles: any[];
+}) {
+  const rows = allProgress.filter(p => p.item_id === itemId);
+  const read = rows.filter(r => r.status === "read");
+  const busy = rows.filter(r => r.status === "in_progress");
+  const startedIds = new Set(rows.map(r => r.user_id));
+  const notStarted = profiles.filter(p => !startedIds.has(p.id));
+  const name = (id: string) => profiles.find(p => p.id === id)?.full_name ?? "Iemand";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded-md border bg-background hover:bg-accent text-muted-foreground">
+          <Users className="h-3 w-3" /> Team
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-3 text-xs space-y-3">
+        <div>
+          <div className="font-semibold text-emerald-600 dark:text-emerald-300 mb-1">Gelezen ({read.length})</div>
+          {read.length === 0 ? <p className="text-muted-foreground">Nog niemand</p> :
+            <ul className="space-y-0.5">{read.map(r => <li key={r.user_id}>{name(r.user_id)}</li>)}</ul>}
+        </div>
+        <div>
+          <div className="font-semibold text-blue-600 dark:text-blue-300 mb-1">Bezig ({busy.length})</div>
+          {busy.length === 0 ? <p className="text-muted-foreground">Niemand</p> :
+            <ul className="space-y-0.5">{busy.map(r => <li key={r.user_id}>{name(r.user_id)}{r.current_page ? ` · p. ${r.current_page}` : ""}</li>)}</ul>}
+        </div>
+        <div>
+          <div className="font-semibold text-muted-foreground mb-1">Niet gestart ({notStarted.length})</div>
+          {notStarted.length === 0 ? <p className="text-muted-foreground">Iedereen is gestart</p> :
+            <ul className="space-y-0.5">{notStarted.map(p => <li key={p.id}>{p.full_name ?? "Iemand"}</li>)}</ul>}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ============== Page prompt dialog ==============
+function PagePromptDialog({
+  item,
+  initial,
+  onClose,
+  onSave,
+}: {
+  item: any;
+  initial: number | null;
+  onClose: () => void;
+  onSave: (page: number | null) => void;
+}) {
+  const [page, setPage] = useState<string>(initial ? String(initial) : "");
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Markeren als bezig</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Op welke pagina ben je gebleven bij <span className="font-medium text-foreground">{item.title}</span>?
+          </p>
+          <div>
+            <Label>Paginanummer (optioneel)</Label>
+            <Input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={page}
+              onChange={(e) => setPage(e.target.value)}
+              placeholder="Bijv. 12"
+              autoFocus
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Annuleren</Button>
+          <Button
+            className="bg-gradient-brand border-0"
+            onClick={() => {
+              const n = page.trim() ? Math.max(1, parseInt(page, 10)) : null;
+              onSave(Number.isFinite(n as number) ? n : null);
+            }}
+          >
+            Opslaan
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

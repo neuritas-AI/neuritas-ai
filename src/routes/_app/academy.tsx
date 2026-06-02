@@ -249,27 +249,36 @@ function AcademyPage() {
           </div>
         </div>
 
-        <div className="relative max-w-md">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Zoeken in deze categorie…"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="relative max-w-md flex-1">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Zoeken in deze categorie…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <StatusFilterPills value={statusFilter} onChange={setStatusFilter} />
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.length === 0 && (
             <Card className="p-10 text-center text-muted-foreground col-span-full">
-              Nog geen items in deze categorie.
+              {items.filter(i => i.category_id === active.id).length === 0
+                ? "Nog geen items in deze categorie."
+                : "Geen items voor dit filter."}
             </Card>
           )}
           {filtered.map(i => {
             const author = profiles.find(p => p.id === i.created_by);
             const canDel = isAdmin || i.created_by === user?.id;
+            const status = getStatus(i.id);
+            const meta = STATUS_META[status];
+            const StatusIcon = meta.icon;
+            const userProg = progressByItem[i.id];
             return (
-              <Card key={i.id} className="p-5 hover:border-primary/40 hover:shadow-soft transition-all flex flex-col">
+              <Card key={i.id} className={`p-5 hover:border-primary/40 hover:shadow-soft transition-all flex flex-col ring-1 ring-inset ${meta.ring}`}>
                 <div className="flex items-start gap-3">
                   <div
                     className="h-10 w-10 rounded-lg grid place-items-center shrink-0"
@@ -289,6 +298,19 @@ function AcademyPage() {
                     </Button>
                   )}
                 </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <Badge variant="outline" className={`gap-1 ${meta.chip}`}>
+                    <StatusIcon className="h-3 w-3" /> {meta.label}
+                    {status === "in_progress" && userProg?.current_page ? (
+                      <span className="ml-1 opacity-80">· p. {userProg.current_page}</span>
+                    ) : null}
+                  </Badge>
+                  {isAdmin && (
+                    <TeamProgressBadge itemId={i.id} allProgress={allProgress} profiles={profiles} />
+                  )}
+                </div>
+
                 {i.description && <p className="text-sm text-muted-foreground mt-3 line-clamp-3">{i.description}</p>}
                 {i.importance && (
                   <div
@@ -301,9 +323,10 @@ function AcademyPage() {
                     <p className="text-xs whitespace-pre-line">{i.importance}</p>
                   </div>
                 )}
+
                 <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t">
                   {i.storage_path && (
-                    <Button size="sm" variant="outline" onClick={() => setPreview({ id: i.id, name: i.file_name, storage_path: i.storage_path, mime_type: i.file_mime })}>
+                    <Button size="sm" variant="outline" onClick={() => setPreview({ ...i, _last_page: userProg?.current_page ?? null })}>
                       <FileText className="h-3.5 w-3.5 mr-1" /> Bekijk bestand
                     </Button>
                   )}
@@ -315,18 +338,58 @@ function AcademyPage() {
                     </Button>
                   )}
                 </div>
+
+                <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-1.5">
+                  {(Object.keys(STATUS_META) as ProgressStatus[]).map(s => {
+                    const m = STATUS_META[s];
+                    const Icon = m.icon;
+                    const isActive = status === s;
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          if (s === "in_progress") setPagePromptItem(i);
+                          else setItemStatus(i, s);
+                        }}
+                        className={`min-h-[36px] flex items-center justify-center gap-1.5 text-[11px] font-medium rounded-md border px-2 py-1.5 transition-all ${
+                          isActive ? `${m.chip} border-current` : "bg-transparent text-muted-foreground border-border hover:bg-accent"
+                        }`}
+                      >
+                        <Icon className="h-3 w-3" />
+                        <span className="hidden sm:inline">{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </Card>
             );
           })}
         </div>
 
-        <FilePreviewDialog file={preview} onClose={() => setPreview(null)} />
+        <FilePreviewDialog
+          file={preview ? { id: preview.id, name: preview.file_name, storage_path: preview.storage_path, mime_type: preview.file_mime } : null}
+          lastPage={preview?._last_page ?? null}
+          onClose={() => setPreview(null)}
+        />
         {catDialog && catDialog !== "new" && (
           <CategoryDialog category={catDialog} userId={user?.id ?? null} onClose={() => setCatDialog(null)} />
+        )}
+        {pagePromptItem && (
+          <PagePromptDialog
+            item={pagePromptItem}
+            initial={progressByItem[pagePromptItem.id]?.current_page ?? null}
+            onClose={() => setPagePromptItem(null)}
+            onSave={(page) => {
+              setItemStatus(pagePromptItem, "in_progress", page);
+              setPagePromptItem(null);
+            }}
+          />
         )}
       </div>
     );
   }
+
 
   // ===== Overzicht categorieën =====
   return (

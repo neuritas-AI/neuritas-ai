@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { INVOICE_STATUSES, invoiceStatusLabel, QUOTE_STATUSES, quoteStatusLabel } from "@/lib/billing-format";
 import { toast } from "sonner";
-import { Trash2, AlertTriangle } from "lucide-react";
+import { Trash2, AlertTriangle, Upload, FileText, X } from "lucide-react";
 import { BillingFiles } from "./BillingFiles";
 
 async function suggestNumber(table: "invoices" | "quotes") {
@@ -48,6 +48,81 @@ function NumberField({ table, value, onChange, currentId }: { table: "invoices" 
   );
 }
 
+function PendingFilesField({ files, onChange }: { files: File[]; onChange: (f: File[]) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-2 border rounded-lg p-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs uppercase tracking-wide text-muted-foreground">Bestanden</Label>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          className="hidden"
+          id="pending-files-input"
+          onChange={e => {
+            const fl = e.target.files;
+            if (!fl) return;
+            onChange([...files, ...Array.from(fl)]);
+            if (inputRef.current) inputRef.current.value = "";
+          }}
+        />
+        <Button asChild size="sm" variant="outline">
+          <label htmlFor="pending-files-input" className="cursor-pointer">
+            <Upload className="h-3.5 w-3.5 mr-1" /> Upload
+          </label>
+        </Button>
+      </div>
+      {files.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-2">Bestanden worden toegevoegd bij opslaan.</p>
+      ) : (
+        <div className="space-y-1">
+          {files.map((f, i) => (
+            <div key={i} className="flex items-center gap-2 p-2 rounded border text-sm">
+              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="truncate font-medium">{f.name}</div>
+                <div className="text-[10px] text-muted-foreground">{(f.size / 1024).toFixed(1)} KB</div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => onChange(files.filter((_, j) => j !== i))}
+                title="Verwijder"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+async function uploadPendingFiles(
+  kind: "quote" | "invoice",
+  parentId: string,
+  customerId: string | null,
+  userId: string,
+  files: File[],
+) {
+  const col = kind === "quote" ? "quote_id" : "invoice_id";
+  for (const file of files) {
+    const path = `${userId}/${kind}s/${parentId}/${Date.now()}-${file.name}`;
+    const { error: upErr } = await supabase.storage.from("files").upload(path, file);
+    if (upErr) { toast.error(upErr.message); continue; }
+    const payload: any = {
+      name: file.name, storage_path: path, size: file.size, mime_type: file.type,
+      uploaded_by: userId, customer_id: customerId ?? null,
+    };
+    payload[col] = parentId;
+    const { error } = await supabase.from("files").insert(payload);
+    if (error) toast.error(error.message);
+  }
+}
+
 export function InvoiceDialog({ invoice, defaults, customers, projects, userId, onClose }: any) {
   const [form, setForm] = useState({
     number: invoice?.number ?? "",
@@ -59,6 +134,7 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
     due_date: invoice?.due_date ?? "",
     notes: invoice?.notes ?? "",
   });
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   useEffect(() => {
     if (!invoice && !form.number) suggestNumber("invoices").then(n => setForm(f => ({ ...f, number: n })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,10 +151,16 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
       notes: form.notes || null,
       ...(invoice ? {} : { created_by: userId }),
     };
-    const { error } = invoice
-      ? await supabase.from("invoices").update(payload).eq("id", invoice.id)
-      : await supabase.from("invoices").insert(payload);
-    if (error) return toast.error(error.message);
+    if (invoice) {
+      const { error } = await supabase.from("invoices").update(payload).eq("id", invoice.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data, error } = await supabase.from("invoices").insert(payload).select().single();
+      if (error) return toast.error(error.message);
+      if (pendingFiles.length && data && userId) {
+        await uploadPendingFiles("invoice", data.id, form.customer_id || null, userId, pendingFiles);
+      }
+    }
     toast.success("Opgeslagen"); onClose();
   }
   async function del() {
@@ -118,7 +200,9 @@ export function InvoiceDialog({ invoice, defaults, customers, projects, userId, 
           <div><Label>Vervaldatum</Label><Input type="date" value={form.due_date} onChange={e=>setForm({...form,due_date:e.target.value})} /></div>
         </div>
         <div><Label>Notities</Label><Textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} /></div>
-        {invoice?.id && <BillingFiles kind="invoice" parentId={invoice.id} customerId={form.customer_id} userId={userId} />}
+        {invoice?.id
+          ? <BillingFiles kind="invoice" parentId={invoice.id} customerId={form.customer_id} userId={userId} />
+          : <PendingFilesField files={pendingFiles} onChange={setPendingFiles} />}
       </div>
       <DialogFooter className="gap-2">
         {invoice && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}
@@ -139,6 +223,7 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
     issue_date: quote?.issue_date ?? new Date().toISOString().slice(0,10),
     notes: quote?.notes ?? "",
   });
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   useEffect(() => {
     if (!quote && !form.number) suggestNumber("quotes").then(n => setForm(f => ({ ...f, number: n })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -153,10 +238,16 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
       issue_date: form.issue_date, notes: form.notes || null,
       ...(quote ? {} : { created_by: userId }),
     };
-    const { error } = quote
-      ? await supabase.from("quotes").update(payload).eq("id", quote.id)
-      : await supabase.from("quotes").insert(payload);
-    if (error) return toast.error(error.message);
+    if (quote) {
+      const { error } = await supabase.from("quotes").update(payload).eq("id", quote.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data, error } = await supabase.from("quotes").insert(payload).select().single();
+      if (error) return toast.error(error.message);
+      if (pendingFiles.length && data && userId) {
+        await uploadPendingFiles("quote", data.id, form.customer_id || null, userId, pendingFiles);
+      }
+    }
     toast.success("Opgeslagen"); onClose();
   }
   async function del() {
@@ -193,7 +284,9 @@ export function QuoteDialog({ quote, defaults, customers, projects, userId, onCl
         </div>
         <div><Label>Datum</Label><Input type="date" value={form.issue_date} onChange={e=>setForm({...form,issue_date:e.target.value})} /></div>
         <div><Label>Notities</Label><Textarea rows={2} value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} /></div>
-        {quote?.id && <BillingFiles kind="quote" parentId={quote.id} customerId={form.customer_id} userId={userId} />}
+        {quote?.id
+          ? <BillingFiles kind="quote" parentId={quote.id} customerId={form.customer_id} userId={userId} />
+          : <PendingFilesField files={pendingFiles} onChange={setPendingFiles} />}
       </div>
       <DialogFooter className="gap-2">
         {quote && <Button variant="destructive" size="sm" onClick={del}><Trash2 className="h-4 w-4 mr-1" /> Verwijder</Button>}

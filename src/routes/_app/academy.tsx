@@ -415,6 +415,10 @@ function AcademyPage() {
         </div>
       </div>
 
+      <ProgressStatsBar stats={stats} />
+
+
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {cats.length === 0 && (
           <Card className="p-10 text-center text-muted-foreground col-span-full">

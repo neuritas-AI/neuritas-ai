@@ -176,8 +176,12 @@ function AcademyPage() {
         (i.importance ?? "").toLowerCase().includes(q),
       );
     }
+    if (statusFilter !== "all") {
+      list = list.filter(i => (progressByItem[i.id]?.status ?? "not_started") === statusFilter);
+    }
     return list;
-  }, [items, active, query]);
+  }, [items, active, query, statusFilter, progressByItem]);
+
 
   async function delItem(item: any) {
     if (!confirm("Verwijderen?")) return;

@@ -727,6 +727,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          archived: boolean
           assigned_to: string[]
           created_at: string
           created_by: string | null
@@ -740,6 +741,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           assigned_to?: string[]
           created_at?: string
           created_by?: string | null
@@ -753,6 +755,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           assigned_to?: string[]
           created_at?: string
           created_by?: string | null

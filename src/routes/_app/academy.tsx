@@ -75,30 +75,75 @@ function AcademyPage() {
   const [cats, setCats] = useState<Category[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [progress, setProgress] = useState<Progress[]>([]);
+  const [allProgress, setAllProgress] = useState<Progress[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [itemDialog, setItemDialog] = useState(false);
   const [catDialog, setCatDialog] = useState<Category | "new" | null>(null);
   const [preview, setPreview] = useState<any | null>(null);
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | ProgressStatus>("all");
+  const [pagePromptItem, setPagePromptItem] = useState<any | null>(null);
 
   async function load() {
-    const [{ data: c }, { data: i }, { data: pr }] = await Promise.all([
+    const [{ data: c }, { data: i }, { data: pr }, { data: pg }] = await Promise.all([
       supabase.from("academy_categories" as any).select("*").order("sort_order").order("name"),
       supabase.from("ai_academy_items" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
+      supabase.from("academy_progress" as any).select("item_id, user_id, status, current_page"),
     ]);
     setCats((c as any[]) ?? []);
     setItems((i as any[]) ?? []);
     setProfiles(pr ?? []);
+    const allPg = ((pg as any[]) ?? []) as Progress[];
+    setAllProgress(allPg);
+    setProgress(user ? allPg.filter(p => p.user_id === user.id) : []);
   }
   useEffect(() => {
     load();
     const ch = supabase.channel("aa-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "ai_academy_items" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "academy_categories" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "academy_progress" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const progressByItem = useMemo(() => {
+    const m: Record<string, Progress> = {};
+    for (const p of progress) m[p.item_id] = p;
+    return m;
+  }, [progress]);
+
+  function getStatus(itemId: string): ProgressStatus {
+    return progressByItem[itemId]?.status ?? "not_started";
+  }
+
+  async function setItemStatus(item: any, status: ProgressStatus, currentPage?: number | null) {
+    if (!user) return;
+    const existing = progressByItem[item.id];
+    const payload: any = {
+      user_id: user.id,
+      item_id: item.id,
+      status,
+      current_page: status === "in_progress" ? (currentPage ?? existing?.current_page ?? null) : null,
+    };
+    // Optimistic update
+    setProgress(prev => {
+      const others = prev.filter(p => p.item_id !== item.id);
+      return [...others, { ...payload }];
+    });
+    const { error } = await supabase
+      .from("academy_progress" as any)
+      .upsert(payload, { onConflict: "user_id,item_id" });
+    if (error) {
+      toast.error(error.message);
+      load();
+    } else {
+      toast.success(STATUS_META[status].label);
+    }
+  }
 
   const counts = useMemo(() => {
     const m: Record<string, number> = {};
@@ -108,6 +153,17 @@ function AcademyPage() {
     }
     return m;
   }, [items]);
+
+  const stats = useMemo(() => {
+    let read = 0, busy = 0;
+    for (const it of items) {
+      const s = progressByItem[it.id]?.status ?? "not_started";
+      if (s === "read") read++;
+      else if (s === "in_progress") busy++;
+    }
+    return { read, busy, not_started: items.length - read - busy, total: items.length };
+  }, [items, progressByItem]);
+
 
   const active = cats.find(c => c.id === activeCat) ?? null;
   const filtered = useMemo(() => {

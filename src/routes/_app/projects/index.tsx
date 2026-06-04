@@ -34,7 +34,7 @@ function ProjectsPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [viewFilter, setViewFilter] = useState<ViewFilter>("active");
+  const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<any | null>(null);
 

@@ -44,7 +44,7 @@ function TasksPage() {
   async function load() {
     const [{ data: t }, { data: c }, { data: p }, { data: pr }] = await Promise.all([
       supabase.from("tasks").select("*, customers(name, company, color), projects(name, is_internal)").order("created_at", { ascending: false }),
-      supabase.from("customers").select("id, name, company").order("company"),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name").order("company"),
       supabase.from("profiles").select("id, full_name, avatar_url"),
       supabase.from("projects").select("id, name, customer_id").order("name"),
     ]);

@@ -37,11 +37,11 @@ function BillingPage() {
 
   async function load() {
     const tasks: any[] = [
-      supabase.from("customers").select("id, name, company").order("company"),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
     ];
-    if (perms.can_view_quotes || perms.can_edit_quotes) tasks.push(supabase.from("quotes").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }));
-    if (perms.can_view_invoices || perms.can_edit_invoices) tasks.push(supabase.from("invoices").select("*, customers(name, company), projects(name)").order("created_at", { ascending: false }));
+    if (perms.can_view_quotes || perms.can_edit_quotes) tasks.push(supabase.from("quotes").select("*, customers(name, company, customer_type, first_name, last_name), projects(name)").order("created_at", { ascending: false }));
+    if (perms.can_view_invoices || perms.can_edit_invoices) tasks.push(supabase.from("invoices").select("*, customers(name, company, customer_type, first_name, last_name), projects(name)").order("created_at", { ascending: false }));
     const res = await Promise.all(tasks);
     setCustomers(res[0].data ?? []); setProjects(res[1].data ?? []);
     let i = 2;
@@ -72,7 +72,7 @@ function BillingPage() {
     return quotes.filter(q => {
       if (qFilter !== "all" && q.status !== qFilter) return false;
       if (!term) return true;
-      return [q.number, q.customers?.company, q.customers?.name, q.projects?.name]
+      return [q.number, q.customers?.company, q.customers?.name, q.customers?.first_name, q.customers?.last_name, q.projects?.name]
         .filter(Boolean).some((s: string) => s.toLowerCase().includes(term));
     });
   }, [quotes, qSearch, qFilter]);
@@ -82,7 +82,7 @@ function BillingPage() {
     return invoices.filter(inv => {
       if (iFilter !== "all" && inv.status !== iFilter) return false;
       if (!term) return true;
-      return [inv.number, inv.customers?.company, inv.customers?.name, inv.projects?.name]
+      return [inv.number, inv.customers?.company, inv.customers?.name, inv.customers?.first_name, inv.customers?.last_name, inv.projects?.name]
         .filter(Boolean).some((s: string) => s.toLowerCase().includes(term));
     });
   }, [invoices, iSearch, iFilter]);

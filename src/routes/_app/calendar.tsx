@@ -52,8 +52,8 @@ function CalendarPage() {
 
   async function load() {
     const [{ data: a }, { data: c }, { data: pr }, { data: pf }, { data: ts }, { data: tp }] = await Promise.all([
-      supabase.from("appointments").select("*, customers(name, company)").order("start_at"),
-      supabase.from("customers").select("id, name, company").order("company"),
+      supabase.from("appointments").select("*, customers(name, company, customer_type, first_name, last_name)").order("start_at"),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name").order("company"),
       supabase.from("projects").select("id,name,customer_id").order("name"),
       supabase.from("profiles").select("id, full_name, avatar_url").order("full_name"),
       supabase.from("tasks").select("id,title,deadline,status,assignee_id,assignee_ids").not("deadline","is",null),

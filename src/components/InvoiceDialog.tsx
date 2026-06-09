@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { INVOICE_STATUSES, invoiceStatusLabel, QUOTE_STATUSES, quoteStatusLabel } from "@/lib/billing-format";
+import { customerLabel } from "@/lib/customer-label";
 import { toast } from "sonner";
 import { Trash2, AlertTriangle, Upload, FileText, X } from "lucide-react";
 import { BillingFiles } from "./BillingFiles";

@@ -20,8 +20,11 @@ import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
-import { isInternalProject, internalBadgeClass, internalIconWrapClass, projectAccent } from "@/lib/project-style";
-import { Building2 } from "lucide-react";
+import {
+  isInternalProject, isIndividualProject, internalBadgeClass, internalIconWrapClass,
+  individualBadgeClass, individualIconWrapClass, companyBadgeClass, projectAccent,
+} from "@/lib/project-style";
+import { Building2, User as UserIcon, Mail, Phone, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -69,7 +72,7 @@ function ProjectDetail() {
       supabase.from("appointments").select("*").eq("project_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
-      supabase.from("customers").select("id, name"),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name"),
     ]);
     setProject(p); setCustomer(p?.customers ?? null);
     setTasks(t ?? []); setAppts(a ?? []); setFiles(f ?? []); setProfiles(pr ?? []); setCustomers(cs ?? []);
@@ -86,6 +89,8 @@ function ProjectDetail() {
 
   if (!project) return <div className="text-muted-foreground">Laden…</div>;
   const internal = isInternalProject(project);
+  const individual = isIndividualProject(project);
+  const company = !internal && !individual;
 
   const assignedNames = (project.assigned_to ?? [])
     .map((uid: string) => profiles.find(p => p.id === uid)?.full_name ?? "Onbekend")

@@ -183,8 +183,8 @@ function ProjectDetail() {
                   {/* Klantgegevens — type-afhankelijk */}
                   {customer && !internal && (
                     <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
-                      {company && customer.contact_name && (
-                        <span className="inline-flex items-center gap-1.5"><UsersIcon className="h-3 w-3" /> {customer.contact_name}</span>
+                      {company && customer.name && customer.name !== customer.company && (
+                        <span className="inline-flex items-center gap-1.5"><UsersIcon className="h-3 w-3" /> {customer.name}</span>
                       )}
                       {customer.email && (
                         <span className="inline-flex items-center gap-1.5"><Mail className="h-3 w-3" /> {customer.email}</span>

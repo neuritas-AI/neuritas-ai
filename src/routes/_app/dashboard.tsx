@@ -25,8 +25,8 @@ function Dashboard() {
 
   async function load() {
     const [{ data: t }, { data: a }, { data: c }, { data: p }] = await Promise.all([
-      supabase.from("tasks").select("*, customers(name, company)").neq("status", "done").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
-      supabase.from("appointments").select("*, customers(name, company)").gte("end_at", new Date().toISOString()).order("start_at").limit(10),
+      supabase.from("tasks").select("*, customers(name, company, customer_type, first_name, last_name)").neq("status", "done").order("deadline", { ascending: true, nullsFirst: false }).limit(50),
+      supabase.from("appointments").select("*, customers(name, company, customer_type, first_name, last_name)").gte("end_at", new Date().toISOString()).order("start_at").limit(10),
       supabase.from("customers").select("*").order("updated_at", { ascending: false }).limit(20),
       supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);

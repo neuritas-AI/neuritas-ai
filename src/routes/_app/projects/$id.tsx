@@ -20,11 +20,15 @@ import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { TaskDialog } from "@/components/TaskDialog";
 import { ProjectNotes } from "@/components/ProjectNotes";
-import { isInternalProject, internalBadgeClass, internalIconWrapClass, projectAccent } from "@/lib/project-style";
-import { Building2 } from "lucide-react";
+import {
+  isInternalProject, isIndividualProject, internalBadgeClass, internalIconWrapClass,
+  individualBadgeClass, individualIconWrapClass, companyBadgeClass, projectAccent,
+} from "@/lib/project-style";
+import { Building2, User as UserIcon, Mail, Phone, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import { customerLabel } from "@/lib/customer-label";
 
 export const Route = createFileRoute("/_app/projects/$id")({ component: ProjectDetail });
 
@@ -69,7 +73,7 @@ function ProjectDetail() {
       supabase.from("appointments").select("*").eq("project_id", id).gte("end_at", new Date().toISOString()).order("start_at", { ascending: true }),
       supabase.from("files").select("*").eq("project_id", id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name, avatar_url"),
-      supabase.from("customers").select("id, name"),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name"),
     ]);
     setProject(p); setCustomer(p?.customers ?? null);
     setTasks(t ?? []); setAppts(a ?? []); setFiles(f ?? []); setProfiles(pr ?? []); setCustomers(cs ?? []);
@@ -86,6 +90,8 @@ function ProjectDetail() {
 
   if (!project) return <div className="text-muted-foreground">Laden…</div>;
   const internal = isInternalProject(project);
+  const individual = isIndividualProject(project);
+  const company = !internal && !individual;
 
   const assignedNames = (project.assigned_to ?? [])
     .map((uid: string) => profiles.find(p => p.id === uid)?.full_name ?? "Onbekend")
@@ -131,9 +137,9 @@ function ProjectDetail() {
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {internal && (
-                      <span className={cn("h-10 w-10 rounded-xl grid place-items-center", internalIconWrapClass)}>
-                        <Building2 className="h-5 w-5" />
+                    {(internal || individual) && (
+                      <span className={cn("h-10 w-10 rounded-xl grid place-items-center", internal ? internalIconWrapClass : individualIconWrapClass)}>
+                        {internal ? <Building2 className="h-5 w-5" /> : <UserIcon className="h-5 w-5" />}
                       </span>
                     )}
                     <h1 className={cn(
@@ -145,7 +151,9 @@ function ProjectDetail() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 mt-3">
-                    {internal && <Badge className={internalBadgeClass}>Intern project</Badge>}
+                    {internal && <Badge className={internalBadgeClass}>🟣 Intern project</Badge>}
+                    {individual && <Badge variant="outline" className={individualBadgeClass}>👤 Particulier</Badge>}
+                    {company && <Badge variant="outline" className={companyBadgeClass}>🏢 Bedrijf</Badge>}
                     {customer && !internal && (
                       <Link
                         to="/customers/$id"
@@ -155,10 +163,10 @@ function ProjectDetail() {
                       >
                         <span className="h-5 w-5 rounded-full grid place-items-center" style={{ background: accent }}>
                           <span className="text-[10px] font-bold text-white">
-                            {(customer.company || customer.name || "?").charAt(0).toUpperCase()}
+                            {customerLabel(customer).charAt(0).toUpperCase()}
                           </span>
                         </span>
-                        <span className="truncate max-w-[200px]">{customer.company || customer.name}</span>
+                        <span className="truncate max-w-[200px]">{customerLabel(customer)}</span>
                       </Link>
                     )}
                     {!internal && <ProjectStatusSelect project={project} onChanged={load} />}
@@ -171,6 +179,24 @@ function ProjectDetail() {
                       </span>
                     )}
                   </div>
+
+                  {/* Klantgegevens — type-afhankelijk */}
+                  {customer && !internal && (
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
+                      {company && customer.name && customer.name !== customer.company && (
+                        <span className="inline-flex items-center gap-1.5"><UsersIcon className="h-3 w-3" /> {customer.name}</span>
+                      )}
+                      {customer.email && (
+                        <span className="inline-flex items-center gap-1.5"><Mail className="h-3 w-3" /> {customer.email}</span>
+                      )}
+                      {customer.phone && (
+                        <span className="inline-flex items-center gap-1.5"><Phone className="h-3 w-3" /> {customer.phone}</span>
+                      )}
+                      {company && customer.vat_number && (
+                        <span className="inline-flex items-center gap-1.5"><Receipt className="h-3 w-3" /> BTW: {customer.vat_number}</span>
+                      )}
+                    </div>
+                  )}
 
                   {project.description && (
                     <p className="text-sm text-muted-foreground mt-4 max-w-2xl leading-relaxed">{project.description}</p>

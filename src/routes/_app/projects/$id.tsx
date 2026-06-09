@@ -136,9 +136,9 @@ function ProjectDetail() {
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    {internal && (
-                      <span className={cn("h-10 w-10 rounded-xl grid place-items-center", internalIconWrapClass)}>
-                        <Building2 className="h-5 w-5" />
+                    {(internal || individual) && (
+                      <span className={cn("h-10 w-10 rounded-xl grid place-items-center", internal ? internalIconWrapClass : individualIconWrapClass)}>
+                        {internal ? <Building2 className="h-5 w-5" /> : <UserIcon className="h-5 w-5" />}
                       </span>
                     )}
                     <h1 className={cn(
@@ -150,7 +150,9 @@ function ProjectDetail() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 mt-3">
-                    {internal && <Badge className={internalBadgeClass}>Intern project</Badge>}
+                    {internal && <Badge className={internalBadgeClass}>🟣 Intern project</Badge>}
+                    {individual && <Badge variant="outline" className={individualBadgeClass}>👤 Particulier</Badge>}
+                    {company && <Badge variant="outline" className={companyBadgeClass}>🏢 Bedrijf</Badge>}
                     {customer && !internal && (
                       <Link
                         to="/customers/$id"
@@ -160,10 +162,10 @@ function ProjectDetail() {
                       >
                         <span className="h-5 w-5 rounded-full grid place-items-center" style={{ background: accent }}>
                           <span className="text-[10px] font-bold text-white">
-                            {(customer.company || customer.name || "?").charAt(0).toUpperCase()}
+                            {customerLabel(customer).charAt(0).toUpperCase()}
                           </span>
                         </span>
-                        <span className="truncate max-w-[200px]">{customer.company || customer.name}</span>
+                        <span className="truncate max-w-[200px]">{customerLabel(customer)}</span>
                       </Link>
                     )}
                     {!internal && <ProjectStatusSelect project={project} onChanged={load} />}
@@ -176,6 +178,24 @@ function ProjectDetail() {
                       </span>
                     )}
                   </div>
+
+                  {/* Klantgegevens — type-afhankelijk */}
+                  {customer && !internal && (
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
+                      {company && customer.contact_name && (
+                        <span className="inline-flex items-center gap-1.5"><UsersIcon className="h-3 w-3" /> {customer.contact_name}</span>
+                      )}
+                      {customer.email && (
+                        <span className="inline-flex items-center gap-1.5"><Mail className="h-3 w-3" /> {customer.email}</span>
+                      )}
+                      {customer.phone && (
+                        <span className="inline-flex items-center gap-1.5"><Phone className="h-3 w-3" /> {customer.phone}</span>
+                      )}
+                      {company && customer.vat_number && (
+                        <span className="inline-flex items-center gap-1.5"><Receipt className="h-3 w-3" /> BTW: {customer.vat_number}</span>
+                      )}
+                    </div>
+                  )}
 
                   {project.description && (
                     <p className="text-sm text-muted-foreground mt-4 max-w-2xl leading-relaxed">{project.description}</p>

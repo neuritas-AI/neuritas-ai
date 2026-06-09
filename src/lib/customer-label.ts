@@ -1,5 +1,26 @@
-/** Returns the primary display name for a customer (company first, then contact). */
-export function customerLabel(c: { company?: string | null; name?: string | null } | null | undefined): string {
+/** Returns the primary display name for a customer (company or full name). */
+export function customerLabel(
+  c:
+    | {
+        customer_type?: string | null;
+        company?: string | null;
+        name?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
+      }
+    | null
+    | undefined,
+): string {
   if (!c) return "—";
-  return (c.company && c.company.trim()) || (c.name && c.name.trim()) || "Onbekend";
+  const isIndividual = c.customer_type === "individual";
+  if (isIndividual) {
+    const full = [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
+    if (full) return full;
+  }
+  return (
+    (c.company && c.company.trim()) ||
+    [c.first_name, c.last_name].filter(Boolean).join(" ").trim() ||
+    (c.name && c.name.trim()) ||
+    "Onbekend"
+  );
 }

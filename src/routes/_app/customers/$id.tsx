@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Pencil, Send, Mail, Phone, Building2, Users as UsersIcon, FolderKanban, Receipt, Plus, CheckSquare, CalendarDays, StickyNote, Clock, Link2 } from "lucide-react";
+import { ArrowLeft, Pencil, Send, Mail, Phone, Building2, User, Users as UsersIcon, FolderKanban, Receipt, Plus, CheckSquare, CalendarDays, StickyNote, Clock, Link2, MapPin } from "lucide-react";
+import { customerLabel } from "@/lib/customer-label";
 import { LinkApptDialog } from "@/components/LinkApptDialog";
 import { fmtMoney, invoiceStatusColor, invoiceStatusLabel, projectStatusColor, projectStatusLabel, quoteStatusColor, quoteStatusLabel } from "@/lib/billing-format";
 import { usePermissions } from "@/lib/permissions";
@@ -105,7 +106,13 @@ function CustomerDetail() {
   };
   const openTasksCount = tasks.filter(t => t.status !== "done").length;
   const inProgressCount = tasks.filter(t => t.status === "in_progress").length;
-  const initials = (customer.company || customer.name || "?").slice(0, 2).toUpperCase();
+  const isIndividual = customer.customer_type === "individual";
+  const displayName = customerLabel(customer);
+  const initials = displayName.slice(0, 2).toUpperCase();
+  const TypeIcon = isIndividual ? User : Building2;
+  const subline = isIndividual
+    ? null
+    : (customer.name && customer.name !== customer.company ? `Contact: ${customer.name}` : null);
 
   return (
     <div className="space-y-6 max-w-[1600px] pb-8">
@@ -127,14 +134,20 @@ function CustomerDetail() {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-2xl md:text-4xl font-display font-semibold tracking-tight inline-flex items-center gap-2">
-                  <Building2 className="h-6 w-6 text-muted-foreground hidden md:inline-block" />
-                  <span className="truncate">{customer.company || customer.name}</span>
+                  <TypeIcon className="h-6 w-6 text-muted-foreground hidden md:inline-block" />
+                  <span className="truncate">{displayName}</span>
                 </h1>
-                {customer.name && customer.name !== customer.company && (
-                  <p className="text-sm text-muted-foreground mt-0.5">Contact: {customer.name}</p>
+                {subline && (
+                  <p className="text-sm text-muted-foreground mt-0.5">{subline}</p>
+                )}
+                {customer.vat_number && !isIndividual && (
+                  <p className="text-xs text-muted-foreground mt-0.5">BTW: {customer.vat_number}</p>
                 )}
 
                 <div className="flex flex-wrap gap-2 mt-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-sm border">
+                    <TypeIcon className="h-3 w-3" />{isIndividual ? "Particulier" : "Bedrijf"}
+                  </span>
                   {customer.email && (
                     <a href={`mailto:${customer.email}`} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-sm border hover:border-primary/50 transition-colors">
                       <Mail className="h-3 w-3" />{customer.email}
@@ -144,6 +157,11 @@ function CustomerDetail() {
                     <a href={`tel:${customer.phone}`} className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-sm border hover:border-primary/50 transition-colors">
                       <Phone className="h-3 w-3" />{customer.phone}
                     </a>
+                  )}
+                  {customer.address && (
+                    <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-background/70 backdrop-blur-sm border">
+                      <MapPin className="h-3 w-3" />{customer.address}
+                    </span>
                   )}
                 </div>
 

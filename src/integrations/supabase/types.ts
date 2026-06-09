@@ -353,55 +353,70 @@ export type Database = {
       }
       customers: {
         Row: {
+          address: string | null
           assigned_to: string[]
           color: string | null
-          company: string
+          company: string | null
           created_at: string
           created_by: string | null
+          customer_type: Database["public"]["Enums"]["customer_kind"]
           email: string | null
+          first_name: string | null
           follow_up_at: string | null
           follow_up_note: string | null
           follow_up_reason: string | null
           id: string
+          last_name: string | null
           name: string | null
           notes: string | null
           phone: string | null
           status: Database["public"]["Enums"]["customer_status"]
           updated_at: string
+          vat_number: string | null
         }
         Insert: {
+          address?: string | null
           assigned_to?: string[]
           color?: string | null
-          company: string
+          company?: string | null
           created_at?: string
           created_by?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_kind"]
           email?: string | null
+          first_name?: string | null
           follow_up_at?: string | null
           follow_up_note?: string | null
           follow_up_reason?: string | null
           id?: string
+          last_name?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
           updated_at?: string
+          vat_number?: string | null
         }
         Update: {
+          address?: string | null
           assigned_to?: string[]
           color?: string | null
-          company?: string
+          company?: string | null
           created_at?: string
           created_by?: string | null
+          customer_type?: Database["public"]["Enums"]["customer_kind"]
           email?: string | null
+          first_name?: string | null
           follow_up_at?: string | null
           follow_up_note?: string | null
           follow_up_reason?: string | null
           id?: string
+          last_name?: string | null
           name?: string | null
           notes?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
           updated_at?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
@@ -1093,6 +1108,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "employee"
+      customer_kind: "company" | "individual"
       customer_status: "lead" | "active" | "completed" | "follow_up"
       invoice_status: "to_send" | "sent" | "paid" | "overdue"
       project_status: "planned" | "active" | "on_hold" | "completed" | "lost"
@@ -1227,6 +1243,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "employee"],
+      customer_kind: ["company", "individual"],
       customer_status: ["lead", "active", "completed", "follow_up"],
       invoice_status: ["to_send", "sent", "paid", "overdue"],
       project_status: ["planned", "active", "on_hold", "completed", "lost"],

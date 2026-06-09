@@ -11,20 +11,25 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Plus, ChevronRight, FolderKanban, Building2, Users2, MoreVertical, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { Plus, ChevronRight, FolderKanban, Building2, Users2, User, MoreVertical, Archive, ArchiveRestore, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useRole } from "@/lib/role";
 import { customerLabel } from "@/lib/customer-label";
 import { PROJECT_STATUSES, PROJECT_STATUS_REQUIRES_REASON, projectStatusLabel } from "@/lib/billing-format";
-import { isInternalProject, projectAccent, internalCardClass, internalIconWrapClass, internalBadgeClass } from "@/lib/project-style";
+import {
+  isInternalProject, isIndividualProject, projectKind, projectAccent,
+  internalCardClass, internalIconWrapClass, internalBadgeClass,
+  individualCardClass, individualIconWrapClass, individualBadgeClass,
+  companyBadgeClass,
+} from "@/lib/project-style";
 import { cn } from "@/lib/utils";
 
 import { ProjectStatusSelect } from "@/components/ProjectStatusSelect";
 
 export const Route = createFileRoute("/_app/projects/")({ component: ProjectsPage });
 
-type ViewFilter = "active" | "internal" | "archived" | "all";
+type ViewFilter = "all" | "companies" | "individuals" | "internal" | "archived";
 
 function ProjectsPage() {
   const { user } = useAuth();
@@ -40,8 +45,8 @@ function ProjectsPage() {
 
   async function load() {
     const [{ data: p }, { data: c }, { data: pr }] = await Promise.all([
-      supabase.from("projects").select("*, customers(name, company, color)").order("updated_at", { ascending: false }),
-      supabase.from("customers").select("id, name, company").order("company"),
+      supabase.from("projects").select("*, customers(name, company, color, customer_type, first_name, last_name, phone, email)").order("updated_at", { ascending: false }),
+      supabase.from("customers").select("id, name, company, customer_type, first_name, last_name").order("company"),
       supabase.from("profiles").select("id, full_name, avatar_url"),
     ]);
     setItems(p ?? []); setCustomers(c ?? []); setProfiles(pr ?? []);
@@ -67,14 +72,27 @@ function ProjectsPage() {
   }
 
   const filtered = items.filter(p => {
-    if (viewFilter === "active" && (p.archived || isInternalProject(p))) return false;
-    if (viewFilter === "internal" && (p.archived || !isInternalProject(p))) return false;
-    if (viewFilter === "archived" && !p.archived) return false;
-    if (viewFilter === "all" && p.archived) return false;
+    const kind = projectKind(p);
+    if (viewFilter === "archived") {
+      if (!p.archived) return false;
+    } else {
+      if (p.archived) return false;
+      if (viewFilter === "companies" && kind !== "company") return false;
+      if (viewFilter === "individuals" && kind !== "individual") return false;
+      if (viewFilter === "internal" && kind !== "internal") return false;
+    }
     if (statusFilter !== "all" && p.status !== statusFilter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !customerLabel(p.customers).toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const counts = {
+    all: items.filter(i => !i.archived).length,
+    companies: items.filter(i => !i.archived && projectKind(i) === "company").length,
+    individuals: items.filter(i => !i.archived && projectKind(i) === "individual").length,
+    internal: items.filter(i => !i.archived && projectKind(i) === "internal").length,
+    archived: items.filter(i => i.archived).length,
+  };
 
   return (
     <div className="space-y-6">
@@ -92,12 +110,13 @@ function ProjectsPage() {
       <Card className="p-4 flex gap-3 flex-wrap items-center sticky top-16 z-[5] shadow-soft">
         <Input placeholder="Zoek op naam of klant…" value={search} onChange={e=>setSearch(e.target.value)} className="max-w-sm" />
         <Select value={viewFilter} onValueChange={(v)=>setViewFilter(v as ViewFilter)}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Actief (klanten)</SelectItem>
-            <SelectItem value="internal">Intern</SelectItem>
-            <SelectItem value="all">Alle actieve</SelectItem>
-            <SelectItem value="archived">Gearchiveerd</SelectItem>
+            <SelectItem value="all">Alle ({counts.all})</SelectItem>
+            <SelectItem value="companies">🏢 Bedrijven ({counts.companies})</SelectItem>
+            <SelectItem value="individuals">👤 Particulieren ({counts.individuals})</SelectItem>
+            <SelectItem value="internal">🟣 Intern ({counts.internal})</SelectItem>
+            <SelectItem value="archived">Gearchiveerd ({counts.archived})</SelectItem>
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -114,13 +133,16 @@ function ProjectsPage() {
         {filtered.length === 0 && <Card className="p-10 text-center text-muted-foreground col-span-full">Geen projecten</Card>}
         {filtered.map(p => {
           const internal = isInternalProject(p);
+          const individual = isIndividualProject(p);
           return (
           <Card key={p.id} className={cn(
             "p-5 hover:shadow-soft transition-all relative overflow-hidden h-full group border-l-4",
-            internal ? internalCardClass + " hover:border-violet-400" : "hover:border-primary/40",
+            internal && internalCardClass + " hover:border-violet-400",
+            individual && individualCardClass + " hover:border-sky-400",
+            !internal && !individual && "hover:border-primary/40",
             p.archived && "opacity-70",
           )} style={{ borderLeftColor: projectAccent(p) }}>
-            <div className={cn("absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity", internal ? "bg-violet-500" : "bg-gradient-brand")} />
+            <div className={cn("absolute top-0 left-0 right-0 h-1 opacity-0 group-hover:opacity-100 transition-opacity", internal ? "bg-violet-500" : individual ? "bg-sky-400" : "bg-gradient-brand")} />
 
             <div className="absolute top-2 right-2 z-10">
               <DropdownMenu>
@@ -150,13 +172,18 @@ function ProjectsPage() {
             </div>
 
             <Link to="/projects/$id" params={{ id: p.id }} className="flex items-start gap-3 pr-8">
-              <div className={cn("h-11 w-11 rounded-xl grid place-items-center shrink-0", internal ? internalIconWrapClass : "bg-gradient-brand-soft text-primary")}>
-                {internal ? <Building2 className="h-5 w-5" /> : <FolderKanban className="h-5 w-5" />}
+              <div className={cn(
+                "h-11 w-11 rounded-xl grid place-items-center shrink-0",
+                internal ? internalIconWrapClass : individual ? individualIconWrapClass : "bg-gradient-brand-soft text-primary",
+              )}>
+                {internal ? <Building2 className="h-5 w-5" /> : individual ? <User className="h-5 w-5" /> : <FolderKanban className="h-5 w-5" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <div className={cn("font-display font-semibold truncate", internal && "text-violet-900 dark:text-violet-100")}>{p.name}</div>
                   {internal && <Badge className={internalBadgeClass + " text-[10px] py-0"}>Intern</Badge>}
+                  {individual && <Badge variant="outline" className={individualBadgeClass + " text-[10px] py-0"}>Particulier</Badge>}
+                  {!internal && !individual && <Badge variant="outline" className={companyBadgeClass + " text-[10px] py-0"}>Bedrijf</Badge>}
                   {p.archived && <Badge variant="outline" className="text-[10px] py-0">Gearchiveerd</Badge>}
                 </div>
                 <div className={cn("text-xs truncate", internal ? "text-violet-700/80 dark:text-violet-300/80" : "text-muted-foreground")}>

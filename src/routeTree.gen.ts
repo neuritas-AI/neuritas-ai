@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
@@ -19,6 +20,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
+import { Route as AppAiAssistantRouteImport } from './routes/_app/ai-assistant'
 import { Route as AppAcademyRouteImport } from './routes/_app/academy'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app/customers/index'
@@ -38,6 +40,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai-chat',
+  path: '/api/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
@@ -75,6 +82,11 @@ const AppBillingRoute = AppBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiAssistantRoute = AppAiAssistantRouteImport.update({
+  id: '/ai-assistant',
+  path: '/ai-assistant',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAcademyRoute = AppAcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
@@ -110,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/academy': typeof AppAcademyRoute
+  '/ai-assistant': typeof AppAiAssistantRoute
   '/billing': typeof AppBillingRoute
   '/calendar': typeof AppCalendarRoute
   '/chat': typeof AppChatRoute
@@ -117,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -127,6 +141,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/academy': typeof AppAcademyRoute
+  '/ai-assistant': typeof AppAiAssistantRoute
   '/billing': typeof AppBillingRoute
   '/calendar': typeof AppCalendarRoute
   '/chat': typeof AppChatRoute
@@ -134,6 +149,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -146,6 +162,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/academy': typeof AppAcademyRoute
+  '/_app/ai-assistant': typeof AppAiAssistantRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/chat': typeof AppChatRoute
@@ -153,6 +170,7 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -165,6 +183,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/academy'
+    | '/ai-assistant'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -172,6 +191,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/tasks'
+    | '/api/ai-chat'
     | '/customers/$id'
     | '/projects/$id'
     | '/api/public/push-notify'
@@ -182,6 +202,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/academy'
+    | '/ai-assistant'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -189,6 +210,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/tasks'
+    | '/api/ai-chat'
     | '/customers/$id'
     | '/projects/$id'
     | '/api/public/push-notify'
@@ -200,6 +222,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/academy'
+    | '/_app/ai-assistant'
     | '/_app/billing'
     | '/_app/calendar'
     | '/_app/chat'
@@ -207,6 +230,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/settings'
     | '/_app/tasks'
+    | '/api/ai-chat'
     | '/_app/customers/$id'
     | '/_app/projects/$id'
     | '/api/public/push-notify'
@@ -218,6 +242,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiPublicPushNotifyRoute: typeof ApiPublicPushNotifyRoute
 }
 
@@ -242,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai-chat': {
+      id: '/api/ai-chat'
+      path: '/api/ai-chat'
+      fullPath: '/api/ai-chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/tasks': {
@@ -293,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai-assistant': {
+      id: '/_app/ai-assistant'
+      path: '/ai-assistant'
+      fullPath: '/ai-assistant'
+      preLoaderRoute: typeof AppAiAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/academy': {
       id: '/_app/academy'
       path: '/academy'
@@ -340,6 +379,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAcademyRoute: typeof AppAcademyRoute
+  AppAiAssistantRoute: typeof AppAiAssistantRoute
   AppBillingRoute: typeof AppBillingRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppChatRoute: typeof AppChatRoute
@@ -355,6 +395,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAcademyRoute: AppAcademyRoute,
+  AppAiAssistantRoute: AppAiAssistantRoute,
   AppBillingRoute: AppBillingRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppChatRoute: AppChatRoute,
@@ -374,6 +415,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiPublicPushNotifyRoute: ApiPublicPushNotifyRoute,
 }
 export const routeTree = rootRouteImport

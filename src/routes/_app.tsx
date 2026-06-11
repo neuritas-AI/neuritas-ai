@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox, BookOpen } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox, BookOpen, Bot } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { usePermissions } from "@/lib/permissions";
@@ -38,6 +38,7 @@ const baseNav = [
   { to: "/projects", label: "Projecten", icon: FolderKanban, perm: "projects" as const },
   { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
   { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
+  { to: "/ai-assistant", label: "AI Assistant", icon: Bot, perm: null },
   { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null },
   { to: "/academy", label: "Academy", icon: BookOpen, perm: null },
   { to: "/notifications", label: "Meldingen", icon: Inbox, perm: null },

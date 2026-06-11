@@ -179,18 +179,18 @@ export const Route = createFileRoute("/api/ai-chat")({
             },
           }),
           list_invoices: tool({
-            description: "Lijst facturen op, optioneel gefilterd op status.",
+            description: "Lijst facturen op, optioneel gefilterd op status (to_send/sent/paid/overdue).",
             inputSchema: z.object({
-              status: z.string().optional().describe("draft, to_send, sent, paid, overdue"),
+              status: z.string().optional(),
               limit: z.number().int().min(1).max(50).optional(),
             }),
             execute: async ({ status, limit }) => {
               let q = supabase
                 .from("invoices")
-                .select("id, number, status, total, issue_date, due_date, customer_id, customers(company, first_name, last_name, customer_type)")
+                .select("id, number, status, amount, issue_date, due_date, customer_id, customers(company, first_name, last_name, customer_type)")
                 .order("issue_date", { ascending: false, nullsFirst: false })
                 .limit(limit ?? 25);
-              if (status) q = q.eq("status", status);
+              if (status) q = q.eq("status", status as any);
               const { data, error } = await q;
               if (error) return `Fout: ${error.message}`;
               return fmtRows(data);

@@ -259,7 +259,7 @@ REGELS:
         const result = streamText({
           model,
           system,
-          messages: convertToModelMessages(body.messages),
+          messages: await convertToModelMessages(body.messages),
           tools,
           stopWhen: stepCountIs(8),
         });

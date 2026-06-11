@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAiChatRouteImport } from './routes/api/ai-chat'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
@@ -38,6 +39,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiChatRoute = ApiAiChatRouteImport.update({
+  id: '/api/ai-chat',
+  path: '/api/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/customers/$id': typeof AppCustomersIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/api/ai-chat': typeof ApiAiChatRoute
   '/_app/customers/$id': typeof AppCustomersIdRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
   '/api/public/push-notify': typeof ApiPublicPushNotifyRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/tasks'
+    | '/api/ai-chat'
     | '/customers/$id'
     | '/projects/$id'
     | '/api/public/push-notify'
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/tasks'
+    | '/api/ai-chat'
     | '/customers/$id'
     | '/projects/$id'
     | '/api/public/push-notify'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/settings'
     | '/_app/tasks'
+    | '/api/ai-chat'
     | '/_app/customers/$id'
     | '/_app/projects/$id'
     | '/api/public/push-notify'
@@ -218,6 +230,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiAiChatRoute: typeof ApiAiChatRoute
   ApiPublicPushNotifyRoute: typeof ApiPublicPushNotifyRoute
 }
 
@@ -242,6 +255,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai-chat': {
+      id: '/api/ai-chat'
+      path: '/api/ai-chat'
+      fullPath: '/api/ai-chat'
+      preLoaderRoute: typeof ApiAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/tasks': {
@@ -374,18 +394,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiAiChatRoute: ApiAiChatRoute,
   ApiPublicPushNotifyRoute: ApiPublicPushNotifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

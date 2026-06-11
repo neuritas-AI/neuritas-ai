@@ -59,7 +59,7 @@ function ChatPane() {
 
   const transport = useMemo(() => new DefaultChatTransport({
     api: "/api/ai-chat",
-    headers: () => (token ? { Authorization: `Bearer ${token}` } : {}),
+    headers: () => (token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>)),
   }), [token]);
 
   const { messages, sendMessage, status, error } = useChat({
@@ -197,7 +197,7 @@ function InsightsPane() {
       supabase.from("invoices").select("id, number, status").eq("status", "to_send"),
       supabase.from("invoices").select("id, number, status, due_date").in("status", ["sent", "overdue"]).lt("due_date", nowIso),
       supabase.from("ai_academy_items").select("id"),
-      supabase.from("academy_progress").select("item_id, completed").eq("completed", true),
+      supabase.from("academy_progress").select("item_id, status").eq("status", "completed"),
     ]);
 
     const projectIdsWithOpen = new Set((openTasks.data ?? []).map((t: any) => t.project_id).filter(Boolean));

@@ -64,7 +64,7 @@ function ChatPane() {
 
   const { messages, sendMessage, status, error } = useChat({
     transport,
-    onError: (e) => toast.error(e.message || "AI fout"),
+    onError: () => toast.error("AI is momenteel niet beschikbaar"),
   });
 
   const [input, setInput] = useState("");
@@ -115,7 +115,7 @@ function ChatPane() {
             <Loader2 className="h-4 w-4 animate-spin" /> Aan het nadenken…
           </div>
         )}
-        {error && <p className="text-xs text-destructive">{error.message}</p>}
+        {error && <p className="text-xs text-destructive">AI is momenteel niet beschikbaar.</p>}
       </div>
       <div className="border-t p-3 bg-background/50">
         <div className="flex gap-2 items-end">

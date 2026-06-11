@@ -20,6 +20,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
+import { Route as AppAiSettingsRouteImport } from './routes/_app/ai-settings'
 import { Route as AppAiAssistantRouteImport } from './routes/_app/ai-assistant'
 import { Route as AppAcademyRouteImport } from './routes/_app/academy'
 import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects/index'
@@ -82,6 +83,11 @@ const AppBillingRoute = AppBillingRouteImport.update({
   path: '/billing',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAiSettingsRoute = AppAiSettingsRouteImport.update({
+  id: '/ai-settings',
+  path: '/ai-settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAiAssistantRoute = AppAiAssistantRouteImport.update({
   id: '/ai-assistant',
   path: '/ai-assistant',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/academy': typeof AppAcademyRoute
   '/ai-assistant': typeof AppAiAssistantRoute
+  '/ai-settings': typeof AppAiSettingsRoute
   '/billing': typeof AppBillingRoute
   '/calendar': typeof AppCalendarRoute
   '/chat': typeof AppChatRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/academy': typeof AppAcademyRoute
   '/ai-assistant': typeof AppAiAssistantRoute
+  '/ai-settings': typeof AppAiSettingsRoute
   '/billing': typeof AppBillingRoute
   '/calendar': typeof AppCalendarRoute
   '/chat': typeof AppChatRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/academy': typeof AppAcademyRoute
   '/_app/ai-assistant': typeof AppAiAssistantRoute
+  '/_app/ai-settings': typeof AppAiSettingsRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/chat': typeof AppChatRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/academy'
     | '/ai-assistant'
+    | '/ai-settings'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/academy'
     | '/ai-assistant'
+    | '/ai-settings'
     | '/billing'
     | '/calendar'
     | '/chat'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/academy'
     | '/_app/ai-assistant'
+    | '/_app/ai-settings'
     | '/_app/billing'
     | '/_app/calendar'
     | '/_app/chat'
@@ -325,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/ai-settings': {
+      id: '/_app/ai-settings'
+      path: '/ai-settings'
+      fullPath: '/ai-settings'
+      preLoaderRoute: typeof AppAiSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/ai-assistant': {
       id: '/_app/ai-assistant'
       path: '/ai-assistant'
@@ -380,6 +399,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAcademyRoute: typeof AppAcademyRoute
   AppAiAssistantRoute: typeof AppAiAssistantRoute
+  AppAiSettingsRoute: typeof AppAiSettingsRoute
   AppBillingRoute: typeof AppBillingRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppChatRoute: typeof AppChatRoute
@@ -396,6 +416,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAcademyRoute: AppAcademyRoute,
   AppAiAssistantRoute: AppAiAssistantRoute,
+  AppAiSettingsRoute: AppAiSettingsRoute,
   AppBillingRoute: AppBillingRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppChatRoute: AppChatRoute,
@@ -421,13 +442,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

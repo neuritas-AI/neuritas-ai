@@ -157,6 +157,30 @@ export type Database = {
           },
         ]
       }
+      ai_settings: {
+        Row: {
+          id: boolean
+          model: string
+          provider: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          model?: string
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          model?: string
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           key: string

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createLovableAiGatewayProvider, createOpenAIProvider } from "@/lib/ai-gateway.server";
 
 type ChatBody = { messages?: UIMessage[] };
 
@@ -27,9 +27,6 @@ export const Route = createFileRoute("/api/ai-chat")({
         const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
         if (!token) return new Response("Unauthorized", { status: 401 });
 
-        const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
-
         let body: ChatBody;
         try { body = (await request.json()) as ChatBody; }
         catch { return new Response("Bad JSON", { status: 400 }); }
@@ -42,8 +39,25 @@ export const Route = createFileRoute("/api/ai-chat")({
         const userId = userData?.user?.id;
         if (!userId) return new Response("Unauthorized", { status: 401 });
 
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        // Load AI settings (provider + model)
+        const { data: settings } = await supabase
+          .from("ai_settings")
+          .select("provider, model")
+          .eq("id", true)
+          .maybeSingle();
+        const provider = (settings as any)?.provider ?? "openai";
+        const modelName = (settings as any)?.model ?? "gpt-4o";
+
+        let model: any;
+        if (provider === "openai") {
+          const openaiKey = process.env.OPENAI_API_KEY;
+          if (!openaiKey) return new Response("OpenAI API key niet geconfigureerd", { status: 500 });
+          model = createOpenAIProvider(openaiKey)(modelName);
+        } else {
+          const lovableKey = process.env.LOVABLE_API_KEY;
+          if (!lovableKey) return new Response("Lovable AI key ontbreekt", { status: 500 });
+          model = createLovableAiGatewayProvider(lovableKey)(modelName || "google/gemini-3-flash-preview");
+        }
 
         const tools = {
           list_tasks: tool({

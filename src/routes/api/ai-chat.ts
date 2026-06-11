@@ -47,19 +47,19 @@ export const Route = createFileRoute("/api/ai-chat")({
 
         const tools = {
           list_tasks: tool({
-            description: "Lijst taken op. Filter op status (open/in_progress/done), assignee, of zonder verantwoordelijke.",
+            description: "Lijst taken op. Filter op status (todo/in_progress/done), of zonder verantwoordelijke.",
             inputSchema: z.object({
-              status: z.enum(["open", "in_progress", "done", "all"]).optional().describe("Filter op status"),
+              status: z.enum(["todo", "in_progress", "done", "all"]).optional().describe("Filter op status"),
               unassigned: z.boolean().optional().describe("Enkel taken zonder verantwoordelijke"),
               limit: z.number().int().min(1).max(50).optional(),
             }),
             execute: async ({ status, unassigned, limit }) => {
               let q = supabase
                 .from("tasks")
-                .select("id, title, status, due_date, assignee_id, assignee_ids, project_id, priority")
-                .order("due_date", { ascending: true, nullsFirst: false })
+                .select("id, title, status, deadline, assignee_id, assignee_ids, project_id, priority")
+                .order("deadline", { ascending: true, nullsFirst: false })
                 .limit(limit ?? 25);
-              if (status && status !== "all") q = q.eq("status", status);
+              if (status && status !== "all") q = q.eq("status", status as any);
               if (unassigned) q = q.is("assignee_id", null);
               const { data, error } = await q;
               if (error) return `Fout: ${error.message}`;

@@ -92,9 +92,9 @@ export const Route = createFileRoute("/api/ai-chat")({
               const [c, projects, quotes, invoices, meetings, notes] = await Promise.all([
                 supabase.from("customers").select("*").eq("id", customer_id).maybeSingle(),
                 supabase.from("projects").select("id, name, status, archived").eq("customer_id", customer_id),
-                supabase.from("quotes").select("id, number, status, total, created_at").eq("customer_id", customer_id),
-                supabase.from("invoices").select("id, number, status, total, issue_date, due_date").eq("customer_id", customer_id),
-                supabase.from("project_meetings").select("id, title, meeting_date, summary").in("project_id",
+                supabase.from("quotes").select("id, number, status, amount, issue_date").eq("customer_id", customer_id),
+                supabase.from("invoices").select("id, number, status, amount, issue_date, due_date").eq("customer_id", customer_id),
+                supabase.from("project_meetings").select("id, meeting_type, meeting_date, discussed, problem, solution").in("project_id",
                   (await supabase.from("projects").select("id").eq("customer_id", customer_id)).data?.map((p: any) => p.id) ?? []
                 ),
                 supabase.from("customer_notes").select("content, created_at").eq("customer_id", customer_id).order("created_at", { ascending: false }).limit(10),
@@ -130,8 +130,8 @@ export const Route = createFileRoute("/api/ai-chat")({
             execute: async ({ project_id }) => {
               const [p, tasks, meetings, notes] = await Promise.all([
                 supabase.from("projects").select("*, customers(company, first_name, last_name, customer_type, email, phone)").eq("id", project_id).maybeSingle(),
-                supabase.from("tasks").select("id, title, status, due_date, assignee_id").eq("project_id", project_id),
-                supabase.from("project_meetings").select("id, title, meeting_date, summary, notes").eq("project_id", project_id).order("meeting_date", { ascending: false }).limit(10),
+                supabase.from("tasks").select("id, title, status, deadline, assignee_id").eq("project_id", project_id),
+                supabase.from("project_meetings").select("id, meeting_type, meeting_date, discussed, problem, solution").eq("project_id", project_id).order("meeting_date", { ascending: false }).limit(10),
                 supabase.from("project_notes").select("content, created_at, user_id").eq("project_id", project_id).order("created_at", { ascending: false }).limit(10),
               ]);
               return JSON.stringify({
@@ -161,18 +161,18 @@ export const Route = createFileRoute("/api/ai-chat")({
             },
           }),
           list_quotes: tool({
-            description: "Lijst offertes op, optioneel gefilterd op status.",
+            description: "Lijst offertes op, optioneel gefilterd op status (draft/sent/accepted/rejected/expired).",
             inputSchema: z.object({
-              status: z.string().optional().describe("draft, sent, accepted, rejected, expired"),
+              status: z.string().optional(),
               limit: z.number().int().min(1).max(50).optional(),
             }),
             execute: async ({ status, limit }) => {
               let q = supabase
                 .from("quotes")
-                .select("id, number, status, total, customer_id, project_id, created_at, customers(company, first_name, last_name, customer_type)")
-                .order("created_at", { ascending: false })
+                .select("id, number, status, amount, customer_id, project_id, issue_date, customers(company, first_name, last_name, customer_type)")
+                .order("issue_date", { ascending: false })
                 .limit(limit ?? 25);
-              if (status) q = q.eq("status", status);
+              if (status) q = q.eq("status", status as any);
               const { data, error } = await q;
               if (error) return `Fout: ${error.message}`;
               return fmtRows(data);

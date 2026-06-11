@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { useRole } from "@/lib/role";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox, BookOpen, Bot } from "lucide-react";
+import { LayoutDashboard, CheckSquare, Users, Calendar, Settings, LogOut, Moon, Sun, Bell, FolderKanban, Receipt, MessageCircle, Menu, Inbox, BookOpen, Bot, Sparkles } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { usePermissions } from "@/lib/permissions";
@@ -32,17 +32,18 @@ function ActivityPinger() {
 }
 
 const baseNav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, perm: null },
-  { to: "/tasks", label: "Taken", icon: CheckSquare, perm: "tasks" as const },
-  { to: "/customers", label: "Klanten", icon: Users, perm: "customers" as const },
-  { to: "/projects", label: "Projecten", icon: FolderKanban, perm: "projects" as const },
-  { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const },
-  { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const },
-  { to: "/ai-assistant", label: "AI Assistant", icon: Bot, perm: null },
-  { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null },
-  { to: "/academy", label: "Academy", icon: BookOpen, perm: null },
-  { to: "/notifications", label: "Meldingen", icon: Inbox, perm: null },
-  { to: "/settings", label: "Instellingen", icon: Settings, perm: null },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, perm: null, adminOnly: false },
+  { to: "/tasks", label: "Taken", icon: CheckSquare, perm: "tasks" as const, adminOnly: false },
+  { to: "/customers", label: "Klanten", icon: Users, perm: "customers" as const, adminOnly: false },
+  { to: "/projects", label: "Projecten", icon: FolderKanban, perm: "projects" as const, adminOnly: false },
+  { to: "/calendar", label: "Agenda", icon: Calendar, perm: "calendar" as const, adminOnly: false },
+  { to: "/billing", label: "Offertes & Facturen", icon: Receipt, perm: "billing" as const, adminOnly: false },
+  { to: "/ai-assistant", label: "AI Assistant", icon: Bot, perm: null, adminOnly: false },
+  { to: "/ai-settings", label: "AI Settings", icon: Sparkles, perm: null, adminOnly: true },
+  { to: "/chat", label: "Team Chat", icon: MessageCircle, perm: null, adminOnly: false },
+  { to: "/academy", label: "Academy", icon: BookOpen, perm: null, adminOnly: false },
+  { to: "/notifications", label: "Meldingen", icon: Inbox, perm: null, adminOnly: false },
+  { to: "/settings", label: "Instellingen", icon: Settings, perm: null, adminOnly: false },
 ] as const;
 
 function AppLayout() {
@@ -52,6 +53,7 @@ function AppLayout() {
   const { perms, isAdmin } = usePermissions();
   const path = useRouterState({ select: s => s.location.pathname });
   const nav = baseNav.filter(n => {
+    if (n.adminOnly && !isAdmin) return false;
     if (isAdmin) return true; // admins always see everything
     if (n.perm === "billing") return perms.can_view_quotes || perms.can_edit_quotes || perms.can_view_invoices || perms.can_edit_invoices;
     if (n.perm === "customers") return perms.can_view_customers;

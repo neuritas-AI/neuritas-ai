@@ -233,9 +233,9 @@ export const Route = createFileRoute("/api/ai-chat")({
               if (unread_only && data) {
                 const { data: progress } = await supabase
                   .from("academy_progress")
-                  .select("item_id, completed")
+                  .select("item_id, status")
                   .eq("user_id", userId);
-                const completed = new Set((progress ?? []).filter((p: any) => p.completed).map((p: any) => p.item_id));
+                const completed = new Set((progress ?? []).filter((p: any) => p.status === "completed").map((p: any) => p.item_id));
                 return fmtRows(data.filter((d: any) => !completed.has(d.id)));
               }
               return fmtRows(data);
